@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Anomaly — Dependency Map & VS Checklist</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap');
+:root {
+  --bg:#080c10;--bg1:#0d1117;--bg2:#111820;--bg3:#161e28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --red:#ff4757;--orange:#ff9f43;--teal:#1dd1a1;--blue:#54a0ff;
+  --purple:#a29bfe;--pink:#fd79a8;--yellow:#ffd32a;
+  --text:#c9d1d9;--muted:#586069;--muted2:#8b949e;
+  --mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+
+header{padding:48px 56px 36px;border-bottom:1px solid var(--border2);position:relative;overflow:hidden;}
+header::after{content:'ANOMALY';position:absolute;right:-10px;bottom:-30px;font-family:var(--display);font-size:180px;font-weight:800;color:var(--red);opacity:0.04;letter-spacing:-8px;pointer-events:none;}
+.hd-eyebrow{font-size:10px;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
+.hd-title{font-family:var(--display);font-size:42px;font-weight:800;line-height:1;margin-bottom:6px;letter-spacing:-1px;}
+.hd-title em{color:var(--red);font-style:normal;}
+.hd-sub{font-size:11px;color:var(--muted2);letter-spacing:1px;margin-bottom:20px;}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid;font-weight:500;}
+.tag-r{color:var(--red);border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.08);}
+.tag-t{color:var(--teal);border-color:rgba(29,209,161,.25);background:rgba(29,209,161,.06);}
+.tag-b{color:var(--blue);border-color:rgba(84,160,255,.25);background:rgba(84,160,255,.06);}
+.tag-o{color:var(--orange);border-color:rgba(255,159,67,.25);background:rgba(255,159,67,.06);}
+.tag-p{color:var(--purple);border-color:rgba(162,155,254,.25);background:rgba(162,155,254,.08);}
+.tag-y{color:var(--yellow);border-color:rgba(255,211,42,.25);background:rgba(255,211,42,.07);}
+
+.page{max-width:1260px;margin:0 auto;padding:0 40px 100px;}
+
+.sec{display:flex;align-items:center;gap:14px;margin:52px 0 22px;}
+.sec-id{font-size:10px;color:var(--red);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
+.sec-bar{flex:1;height:1px;background:var(--border2);}
+.sec-name{font-family:var(--display);font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+
+.note{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--red);padding:18px 22px;border-radius:2px;margin-bottom:24px;font-size:12.5px;color:var(--muted2);line-height:1.8;}
+.note strong{color:var(--text);}
+.note-teal{border-left-color:var(--teal);}
+.note-orange{border-left-color:var(--orange);}
+
+/* SCOPE */
+.scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px;}
+.scope-box{background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.scope-head{padding:10px 16px;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;border-bottom:1px solid var(--border);}
+.scope-in .scope-head{color:var(--teal);background:rgba(29,209,161,.05);}
+.scope-out .scope-head{color:var(--red);background:rgba(255,71,87,.05);}
+.scope-item{display:grid;grid-template-columns:160px 1fr;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);font-size:12px;}
+.scope-item:last-child{border-bottom:none;}
+.scope-item strong{color:var(--text);font-size:12px;}
+.scope-item span{color:var(--muted2);}
+.scope-tick{color:var(--teal);margin-right:6px;}
+.scope-cross{color:var(--red);margin-right:6px;}
+
+/* PHASES */
+.phase{border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:14px;display:flex;}
+.phase-num{writing-mode:vertical-rl;transform:rotate(180deg);padding:20px 13px;font-family:var(--display);font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ph1 .phase-num{background:rgba(255,71,87,.1);color:var(--red);}
+.ph2 .phase-num{background:rgba(255,159,67,.08);color:var(--orange);}
+.ph3 .phase-num{background:rgba(29,209,161,.07);color:var(--teal);}
+.ph4 .phase-num{background:rgba(84,160,255,.07);color:var(--blue);}
+.phase-body{padding:18px 22px;flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.phase-col h5{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.phase-col ul{list-style:none;}
+.phase-col ul li{font-size:12px;padding:3px 0;color:var(--text);}
+.phase-col ul li::before{content:'›';color:var(--muted);margin-right:7px;}
+.phase-col .exit li{color:var(--muted2);}
+.phase-week{font-size:10px;padding:3px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:2px;color:var(--muted2);letter-spacing:1px;margin-bottom:12px;display:inline-block;}
+.phase-title{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:4px;}
+.phase-target{font-size:11.5px;color:var(--muted2);margin-bottom:12px;}
+
+/* DEP MAP */
+.dep-intro{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:18px 22px;margin-bottom:28px;font-size:12.5px;color:var(--muted2);line-height:1.8;}
+.dep-intro strong{color:var(--text);}
+.layer{margin-bottom:6px;}
+.layer-head{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:8px 0 8px;display:flex;align-items:center;gap:12px;}
+.layer-head::after{content:'';flex:1;height:1px;background:var(--border);}
+.layer-l0 .layer-head{color:var(--muted2);}
+.layer-l1 .layer-head{color:var(--blue);}
+.layer-l2 .layer-head{color:var(--orange);}
+.layer-l3 .layer-head{color:var(--teal);}
+.layer-l4 .layer-head{color:var(--purple);}
+.layer-l5 .layer-head{color:var(--pink);}
+.layer-cards{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.dep-card{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:10px 14px;min-width:200px;max-width:320px;}
+.dep-card-name{font-size:12.5px;font-weight:500;margin-bottom:4px;}
+.dep-card-needs{font-size:11px;color:var(--muted2);}
+.dep-card-needs span{color:var(--muted);}
+.l0-card{border-top:2px solid var(--muted);}
+.l1-card{border-top:2px solid var(--blue);}
+.l2-card{border-top:2px solid var(--orange);}
+.l3-card{border-top:2px solid var(--teal);}
+.l4-card{border-top:2px solid var(--purple);}
+.l5-card{border-top:2px solid var(--pink);}
+.l0-card .dep-card-name{color:var(--muted2);}
+.l1-card .dep-card-name{color:var(--blue);}
+.l2-card .dep-card-name{color:var(--orange);}
+.l3-card .dep-card-name{color:var(--teal);}
+.l4-card .dep-card-name{color:var(--purple);}
+.l5-card .dep-card-name{color:var(--pink);}
+.layer-arrow{text-align:center;color:var(--muted);font-size:11px;letter-spacing:2px;padding:6px 0;margin-bottom:6px;}
+
+/* CRITICAL PATH */
+.crit-table{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:24px;}
+.crit-table th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg1);}
+.crit-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;font-size:12px;}
+.crit-table tr:last-child td{border-bottom:none;}
+.crit-table tr:hover td{background:rgba(255,255,255,.012);}
+.td-sys{color:var(--teal);font-weight:500;white-space:nowrap;}
+.td-dep{color:var(--muted2);}
+.td-blocks{color:var(--text);}
+.risk-crit{color:var(--red);font-weight:700;font-size:11px;}
+.risk-high{color:var(--orange);font-weight:600;font-size:11px;}
+.risk-med{color:var(--yellow);font-size:11px;}
+
+/* PARALLEL */
+.parallel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:8px;}
+.par-box{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:14px 16px;}
+.par-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.par-box ul{list-style:none;}
+.par-box ul li{font-size:12px;padding:3px 0;color:var(--text);}
+.par-box ul li::before{content:'›';color:var(--muted);margin-right:7px;}
+.par-box ul li.ordering{color:var(--orange);font-size:11px;}
+.par-box ul li.ordering::before{content:'↳';color:var(--orange);margin-right:7px;}
+
+/* CHECKLIST */
+.chk-section{margin-bottom:32px;}
+.chk-head{font-family:var(--display);font-size:16px;font-weight:700;padding:10px 0;margin-bottom:2px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;}
+.chk-num{font-size:10px;padding:2px 8px;border-radius:2px;background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25);letter-spacing:1px;}
+table.chk{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+table.chk th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg1);}
+table.chk td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;font-size:12px;}
+table.chk tr:last-child td{border-bottom:none;}
+table.chk tr:hover td{background:rgba(255,255,255,.012);}
+.td-pass{width:32px;text-align:center;}
+.pass-box{width:16px;height:16px;border:1px solid var(--border2);border-radius:2px;display:inline-block;}
+.td-id{color:var(--muted);font-size:11px;white-space:nowrap;width:52px;}
+.td-test{color:var(--text);}
+.td-test p{font-size:11px;color:var(--muted2);margin-top:3px;}
+.td-sev{width:56px;text-align:center;}
+.sev-crit{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);border-radius:2px;}
+.sev-high{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;background:rgba(255,159,67,.12);color:var(--orange);border:1px solid rgba(255,159,67,.3);border-radius:2px;}
+.sev-med{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;background:rgba(255,211,42,.1);color:var(--yellow);border:1px solid rgba(255,211,42,.25);border-radius:2px;}
+.sev-low{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;background:rgba(139,148,158,.1);color:var(--muted2);border:1px solid rgba(139,148,158,.2);border-radius:2px;}
+.td-hint{color:var(--muted2);font-size:11px;font-style:italic;}
+code{font-family:var(--mono);font-size:11px;background:rgba(29,209,161,.1);color:var(--teal);padding:1px 5px;border-radius:2px;}
+
+.sev-legend{display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;align-items:center;}
+.sev-legend span{font-size:11px;color:var(--muted2);}
+
+footer{margin-top:80px;padding:20px 56px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);}
+footer span{color:var(--red);}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg1);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-eyebrow">// Production Document</div>
+  <div class="hd-title">PROJECT <em>ANOMALY</em></div>
+  <div class="hd-sub">Vertical Slice Scope · System Dependency Map · Playtest Checklist — Sourced from GDD v1.1 and architecture TDD</div>
+  <div class="tag-row">
+    <span class="tag tag-r">GDD V1.1</span>
+    <span class="tag tag-b">TDD V1.1</span>
+    <span class="tag tag-t">VS Target</span>
+    <span class="tag tag-o">UE 5.4</span>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ══ 01 VERTICAL SLICE SCOPE ══ -->
+<div class="sec"><span class="sec-id">// 01</span><div class="sec-bar"></div><span class="sec-name">Vertical Slice Scope</span><div class="sec-bar"></div></div>
+
+<div class="note">
+  <strong>What a vertical slice is:</strong> A short, complete, shippable slice of the game that proves the core loop works end-to-end. It is not a demo of every feature — it is the most efficient possible proof that the game is fun. Everything in scope must be fully playable and polished. Everything out of scope is explicitly deferred.
+</div>
+
+<div class="scope-grid">
+  <div class="scope-box scope-in">
+    <div class="scope-head">✓ In Scope — Must Ship in VS</div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>One complete arena encounter</strong><span>1 arena level, playable start to finish with waves and a clear win condition</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>All 3 weapons functional</strong><span>Pistol, Shotgun, Assault Rifle with correct fire behaviour, ammo, and reload</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Rage System — full loop</strong><span>WP hits → meter builds → Enraged State → all 4 abilities active → state ends</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>1 equipped Special Skill</strong><span>Any one skill fully working. Skill swap at save point included.</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Grapple + Dash movement</strong><span>Grapple anchors placed in arena; Dash rage-gated</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Satchel Charge</strong><span>Throw, fuse, blast jump, crowd control, cooldown</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Parry system</strong><span>Normal + Perfect parry, parry window, rage-widened window</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>All 5 enemy types</strong><span>Brute, Flying Eye, Spawner, FodderMelee, FodderRanged each with functional AI</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>All enemy animations</strong><span>Locomotion, attack, stun, death (ragdoll) for each enemy</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Player animations</strong><span>Locomotion, grapple, dash, parry, death montages</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Weak point system</strong><span>Visual WP actors on sockets, hit detection, armour break on Brute</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Save point + skill swap UI</strong><span>Placed in arena, functional skill selection menu</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Core HUD</strong><span>Health bar, rage meter, ammo display, skill slot display, weapon wheel</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Death screen</strong><span>Player death → screen → respawn (reload level)</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Pause menu</strong><span>Pause/resume/quit functional</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Footstep audio + VFX</strong><span>At minimum 2 surface types (concrete + metal)</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Combat audio</strong><span>All weapon fire, impacts, enemy alerts, satchel explosion</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>PP_Enrage + PP_HitFlash</strong><span>Post process effects on both rage and damage</span></div>
+    <div class="scope-item"><strong><span class="scope-tick">✓</span>Camera shake on hit</strong><span>Feedback on player taking damage</span></div>
+  </div>
+  <div class="scope-box scope-out">
+    <div class="scope-head">✗ Out of Scope — Explicitly Deferred</div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Story / narrative</strong><span>No cutscenes, no dialogue, no Act 1 story beats in the VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Multiple levels / Act structure</strong><span>The VS is one arena. Level streaming and the 4-era hub are post-VS.</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Multiple Special Skills</strong><span>Only 1 skill needs to work. The full DT_Skills registry is post-VS.</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Enemy C (Spawner) full budget tuning</strong><span>Spawner functions but spawn budget numbers are placeholder</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Full IK (foot IK)</strong><span>Foot IK is a polish feature. VS uses base locomotion without adaptive foot placement.</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Main menu level (L_MainMenu)</strong><span>Game starts directly in arena for VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Loading screen</strong><span>No level transitions in VS; WBP_LoadingScreen deferred</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Settings menu</strong><span>Pause menu has Quit only; Settings is a stub</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Audio volume settings</strong><span>Sound Classes set up but no in-game volume sliders</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Music system</strong><span>SC_Music exists but no music tracks in VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Multiple skill types</strong><span>Post-VS expansion</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Post-process LUT per act</strong><span>Single LUT or no LUT in VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Gamepad full support</strong><span>IMC_ keyboard/mouse only for VS; gamepad bindings added post-VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Hit reaction directional variants</strong><span>Single hit react montage in VS; 4-directional variants post-VS</span></div>
+    <div class="scope-item"><strong><span class="scope-cross">✗</span>Dissolve death FX</strong><span>Ragdoll + destroy without dissolve in VS; MF_Dissolve post-VS</span></div>
+  </div>
+</div>
+
+<div class="note note-orange">
+  <strong>How to read the phases below:</strong> Each phase must be fully complete and tested before the next begins. A system listed in Phase 2 cannot be started until all Phase 1 systems pass their debug tests from the BP Guide. This order is enforced by the dependency map in Section 02.
+</div>
+
+<!-- PHASE 01 -->
+<div class="phase ph1">
+  <div class="phase-num">Phase 01</div>
+  <div class="phase-body">
+    <div class="phase-col">
+      <div class="phase-week">WEEK 1–2</div>
+      <div class="phase-title">Foundation — Core Damage Loop</div>
+      <div class="phase-target">Target: enemy takes damage from player and dies. Nothing else.</div>
+      <h5>Blueprints</h5>
+      <ul>
+        <li>BP_PlayerCharacter</li>
+        <li>BP_PlayerController</li>
+        <li>AC_HealthComponent</li>
+        <li>AC_WeaponComponent</li>
+        <li>BP_WeaponBase</li>
+        <li>BP_Weapon_Pistol</li>
+        <li>BP_EnemyBase</li>
+        <li>AC_EnemyHealthComponent</li>
+        <li>BP_Enemy_Brute (static)</li>
+      </ul>
+    </div>
+    <div class="phase-col">
+      <h5>Interfaces + Data</h5>
+      <ul>
+        <li>BPI_Damageable</li>
+        <li>FS_DamageInfo struct</li>
+        <li>DT_Weapons (Pistol row)</li>
+        <li>DT_Enemies (Brute row)</li>
+        <li>IMC_Default (fire input)</li>
+        <li>IA_Fire, IA_Move, IA_Look</li>
+      </ul>
+    </div>
+    <div class="phase-col exit">
+      <h5>Exit Criteria</h5>
+      <ul>
+        <li>Player can move and aim</li>
+        <li>Pistol fires hitscan</li>
+        <li>Brute takes damage and dies</li>
+        <li>Death removes enemy from scene</li>
+        <li>No crashes on repeated fire</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 02 -->
+<div class="phase ph2">
+  <div class="phase-num">Phase 02</div>
+  <div class="phase-body">
+    <div class="phase-col">
+      <div class="phase-week">WEEK 3–4</div>
+      <div class="phase-title">Rage Loop + All Weapons</div>
+      <div class="phase-target">Target: hitting WPs fills rage, triggers Enraged State with all 4 bonuses.</div>
+      <h5>Blueprints</h5>
+      <ul>
+        <li>AC_RageComponent</li>
+        <li>AC_WeakPointComponent</li>
+        <li>BP_WeakPointActor</li>
+        <li>BP_Weapon_Shotgun</li>
+        <li>BP_Weapon_AssaultRifle</li>
+        <li>AC_ParryComponent</li>
+        <li>BP_ParryWindow</li>
+        <li>BP_Projectile_Base</li>
+        <li>BP_Projectile_Enemy</li>
+      </ul>
+    </div>
+    <div class="phase-col">
+      <h5>Interfaces + Data</h5>
+      <ul>
+        <li>BPI_Rageable</li>
+        <li>BPI_WeakPointTarget</li>
+        <li>BPI_Parryable</li>
+        <li>DT_Weapons (Shotgun + AR rows)</li>
+        <li>IA_Parry added to IMC</li>
+      </ul>
+    </div>
+    <div class="phase-col exit">
+      <h5>Exit Criteria</h5>
+      <ul>
+        <li>WP hits add rage visibly</li>
+        <li>Meter full → Enraged State starts</li>
+        <li>All 4 Enraged abilities work</li>
+        <li>State ends after ~1.5s</li>
+        <li>Shotgun spread + AR wind-up correct</li>
+        <li>Parry deflects green projectiles</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 03 -->
+<div class="phase ph3">
+  <div class="phase-num">Phase 03</div>
+  <div class="phase-body">
+    <div class="phase-col">
+      <div class="phase-week">WEEK 5–7</div>
+      <div class="phase-title">Movement + Utility + All Enemy AI</div>
+      <div class="phase-target">Target: full combat arena with all 5 enemy types behaving correctly.</div>
+      <h5>Blueprints</h5>
+      <ul>
+        <li>AC_MovementExtComponent</li>
+        <li>BP_GrappleAnchor</li>
+        <li>AC_UtilityComponent</li>
+        <li>BP_SatchelCharge</li>
+        <li>AC_StunComponent</li>
+        <li>BP_SkillBase (abstract)</li>
+        <li>BP_Save_Anomaly</li>
+        <li>All 5 enemy child BPs</li>
+        <li>All 5 AIC_ + BT_ + BB_</li>
+        <li>BTT_/BTS_/BTD_ shared nodes</li>
+        <li>AC_SpawnDirectorComponent</li>
+        <li>BP_EnemySpawner</li>
+        <li>BP_ArenaManager</li>
+      </ul>
+    </div>
+    <div class="phase-col">
+      <h5>AI + Data</h5>
+      <ul>
+        <li>EQS_FlyingEye_Strafe</li>
+        <li>EQS_Spawner_Retreat</li>
+        <li>NavMesh configured</li>
+        <li>DT_Enemies (all 5 rows)</li>
+        <li>DT_ArenaWaves (1 wave)</li>
+        <li>DT_Skills (stub row)</li>
+        <li>AIPerceptionStimuliSource on player</li>
+      </ul>
+    </div>
+    <div class="phase-col exit">
+      <h5>Exit Criteria</h5>
+      <ul>
+        <li>Grapple pulls to anchor</li>
+        <li>Dash works during enrage only</li>
+        <li>Satchel detonates + blast jump works</li>
+        <li>Brute engages, attacks, stuns</li>
+        <li>FlyingEye strafes, fires, freezes on eye hit</li>
+        <li>Spawner retreats and spawns fodder within budget</li>
+        <li>Fodder melee charges, ranged keeps distance</li>
+        <li>Arena wave clears, OnWaveComplete fires</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE 04 -->
+<div class="phase ph4">
+  <div class="phase-num">Phase 04</div>
+  <div class="phase-body">
+    <div class="phase-col">
+      <div class="phase-week">WEEK 8–10</div>
+      <div class="phase-title">Animation + Audio + UI + Polish</div>
+      <div class="phase-target">Target: complete playable vertical slice — all systems integrated and presentable.</div>
+      <h5>Blueprints</h5>
+      <ul>
+        <li>All ABP_ (player + 5 enemies)</li>
+        <li>All BS_ locomotion blends</li>
+        <li>Hit reaction montages</li>
+        <li>Death ragdoll wiring</li>
+        <li>AC_SkillSlotComponent + 1 skill</li>
+        <li>BP_SavePoint + WBP_SkillSelectMenu</li>
+        <li>BP_GI_Anomaly (save system)</li>
+        <li>WBP_HUD (all widgets)</li>
+        <li>WBP_PauseMenu + WBP_DeathScreen</li>
+      </ul>
+    </div>
+    <div class="phase-col">
+      <h5>Audio + VFX + PP</h5>
+      <ul>
+        <li>Footstep AN_ notifies live</li>
+        <li>DT_FootstepSurfaces (2 surfaces)</li>
+        <li>All combat SC_ cues assigned</li>
+        <li>SC_/SM_ hierarchy set up</li>
+        <li>PP_Enrage + PP_HitFlash</li>
+        <li>NS_WeakPointHit + NS_SatchelExplosion</li>
+        <li>BP_CameraShake_Hit</li>
+      </ul>
+    </div>
+    <div class="phase-col exit">
+      <h5>Exit Criteria</h5>
+      <ul>
+        <li>All enemies animate correctly</li>
+        <li>Footsteps play on correct surfaces</li>
+        <li>All combat sounds present</li>
+        <li>Screen effects on rage + damage</li>
+        <li>Skill equip + activate works end to end</li>
+        <li>Save point functional</li>
+        <li>HUD reflects all live values</li>
+        <li>Pause and death screens functional</li>
+        <li>Full playthrough: spawn → fight → win → death → respawn</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 02 SYSTEM DEPENDENCY MAP ══ -->
+<div class="sec"><span class="sec-id">// 02</span><div class="sec-bar"></div><span class="sec-name">System Dependency Map</span><div class="sec-bar"></div></div>
+
+<div class="dep-intro">
+  <strong>How to read this map:</strong> Systems are arranged in layers from bottom (no dependencies) to top (many dependencies). You cannot build a system until everything it depends on is complete. Each system's "Needs" line lists its direct dependencies. Build layers bottom-to-top.
+</div>
+
+<!-- LAYER 0 -->
+<div class="layer layer-l0">
+  <div class="layer-head">Layer 0 — No Dependencies (Build First)</div>
+  <div class="layer-cards">
+    <div class="dep-card l0-card"><div class="dep-card-name">FS_DamageInfo</div><div class="dep-card-needs"><span>Needs:</span> nothing — universal damage payload</div></div>
+    <div class="dep-card l0-card"><div class="dep-card-name">All BPI_ Interfaces</div><div class="dep-card-needs"><span>Needs:</span> nothing — cross-system communication contracts</div></div>
+    <div class="dep-card l0-card"><div class="dep-card-name">All Structs (FS_)</div><div class="dep-card-needs"><span>Needs:</span> nothing — FS_WeaponRow, FS_EnemyRow, FS_SkillRow, FS_WaveRow</div></div>
+    <div class="dep-card l0-card"><div class="dep-card-name">DT_Weapons / DT_Enemies</div><div class="dep-card-needs"><span>Needs:</span> nothing — pure data, no BP deps</div></div>
+    <div class="dep-card l0-card"><div class="dep-card-name">DT_Skills / DT_ArenaWaves / DT_FootstepSurfaces</div><div class="dep-card-needs"><span>Needs:</span> nothing — pure data, no BP deps</div></div>
+    <div class="dep-card l0-card"><div class="dep-card-name">IMC_Default + all IA_</div><div class="dep-card-needs"><span>Needs:</span> nothing — input assets, no BP deps</div></div>
+  </div>
+</div>
+<div class="layer-arrow">▼ Layer 0 must be complete before Layer 1</div>
+
+<!-- LAYER 1 -->
+<div class="layer layer-l1">
+  <div class="layer-head">Layer 1 — Core Components (Depend Only on Layer 0)</div>
+  <div class="layer-cards">
+    <div class="dep-card l1-card"><div class="dep-card-name">AC_HealthComponent</div><div class="dep-card-needs"><span>Needs:</span> FS_DamageInfo, BPI_Damageable</div></div>
+    <div class="dep-card l1-card"><div class="dep-card-name">AC_EnemyHealthComponent</div><div class="dep-card-needs"><span>Needs:</span> FS_DamageInfo, BPI_Damageable</div></div>
+    <div class="dep-card l1-card"><div class="dep-card-name">BP_WeaponBase</div><div class="dep-card-needs"><span>Needs:</span> FS_DamageInfo, DT_Weapons, BPI_Damageable</div></div>
+    <div class="dep-card l1-card"><div class="dep-card-name">AC_RageComponent</div><div class="dep-card-needs"><span>Needs:</span> BPI_Rageable</div></div>
+    <div class="dep-card l1-card"><div class="dep-card-name">BP_PlayerController</div><div class="dep-card-needs"><span>Needs:</span> IMC_Default, all IA_</div></div>
+  </div>
+</div>
+<div class="layer-arrow">▼ Layer 1 must be complete before Layer 2</div>
+
+<!-- LAYER 2 -->
+<div class="layer layer-l2">
+  <div class="layer-head">Layer 2 — Combat Mechanics (Depend on Layers 0–1)</div>
+  <div class="layer-cards">
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_GrappleAnchor</div><div class="dep-card-needs"><span>Needs:</span> nothing — placed actor, no BP deps</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_SatchelCharge</div><div class="dep-card-needs"><span>Needs:</span> BPI_Damageable — physics actor with radial force</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_WeakPointActor</div><div class="dep-card-needs"><span>Needs:</span> nothing — spawnable collision volume, child of enemy socket</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">AC_WeaponComponent</div><div class="dep-card-needs"><span>Needs:</span> BP_WeaponBase, AC_RageComponent events</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">AC_WeakPointComponent</div><div class="dep-card-needs"><span>Needs:</span> BPI_WeakPointTarget, BPI_Rageable, AC_RageComponent, BP_WeakPointActor</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">AC_ParryComponent</div><div class="dep-card-needs"><span>Needs:</span> BPI_Parryable, AC_RageComponent events</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">AC_StunComponent</div><div class="dep-card-needs"><span>Needs:</span> AC_EnemyHealthComponent</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_Projectile_Base</div><div class="dep-card-needs"><span>Needs:</span> BPI_Parryable, BPI_Damageable — abstract parent</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_Projectile_Enemy</div><div class="dep-card-needs"><span>Needs:</span> BP_Projectile_Base — build after Projectile_Base</div></div>
+    <div class="dep-card l2-card"><div class="dep-card-name">BP_ParryWindow</div><div class="dep-card-needs"><span>Needs:</span> AC_ParryComponent — build after ParryComponent</div></div>
+  </div>
+</div>
+<div class="layer-arrow">▼ Layer 2 must be complete before Layer 3</div>
+
+<!-- LAYER 3 -->
+<div class="layer layer-l3">
+  <div class="layer-head">Layer 3 — AI + Movement (Depend on Layers 0–2)</div>
+  <div class="layer-cards">
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_SkillBase</div><div class="dep-card-needs"><span>Needs:</span> BPI_SkillEquippable, DA_SkillData — abstract parent for all skills</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_Save_Anomaly</div><div class="dep-card-needs"><span>Needs:</span> nothing — SaveGame object, no BP deps</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_EnemySpawner</div><div class="dep-card-needs"><span>Needs:</span> nothing — placed actor used by ArenaManager</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_PlayerCharacter</div><div class="dep-card-needs"><span>Needs:</span> ALL AC_ player components, BPI_Damageable + BPI_Rageable</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_EnemyBase</div><div class="dep-card-needs"><span>Needs:</span> AC_EnemyHealthComponent, AC_WeakPointComponent, AC_StunComponent, DT_Enemies</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">All AIC_ + BT_ + BB_</div><div class="dep-card-needs"><span>Needs:</span> BP_EnemyBase complete, NavMesh, Blackboards</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">AC_MovementExtComponent</div><div class="dep-card-needs"><span>Needs:</span> BP_GrappleAnchor, BPI_Rageable, AC_RageComponent</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">AC_UtilityComponent</div><div class="dep-card-needs"><span>Needs:</span> BPI_Damageable, BP_SatchelCharge</div></div>
+    <div class="dep-card l3-card"><div class="dep-card-name">BP_ArenaManager</div><div class="dep-card-needs"><span>Needs:</span> All enemy BPs, BP_EnemySpawner, DT_ArenaWaves</div></div>
+  </div>
+</div>
+<div class="layer-arrow">▼ Layer 3 must be complete before Layer 4</div>
+
+<!-- LAYER 4 -->
+<div class="layer layer-l4">
+  <div class="layer-head">Layer 4 — Systems + Persistence (Depend on Layers 0–3)</div>
+  <div class="layer-cards">
+    <div class="dep-card l4-card"><div class="dep-card-name">AC_SkillSlotComponent</div><div class="dep-card-needs"><span>Needs:</span> BP_SkillBase, DT_Skills, AC_RageComponent events, BPI_SkillEquippable</div></div>
+    <div class="dep-card l4-card"><div class="dep-card-name">BP_GI_Anomaly</div><div class="dep-card-needs"><span>Needs:</span> BP_Save_Anomaly</div></div>
+    <div class="dep-card l4-card"><div class="dep-card-name">BP_SavePoint</div><div class="dep-card-needs"><span>Needs:</span> AC_SkillSlotComponent, BP_GI_Anomaly, BPI_Interactable</div></div>
+    <div class="dep-card l4-card"><div class="dep-card-name">All ABP_ (animations)</div><div class="dep-card-needs"><span>Needs:</span> All enemy BPs + player BP, SK_ meshes, montages</div></div>
+    <div class="dep-card l4-card"><div class="dep-card-name">Footstep System</div><div class="dep-card-needs"><span>Needs:</span> All ABP_, DT_FootstepSurfaces, Physical Materials on geometry</div></div>
+  </div>
+</div>
+<div class="layer-arrow">▼ Layer 4 must be complete before Layer 5</div>
+
+<!-- LAYER 5 -->
+<div class="layer layer-l5">
+  <div class="layer-head">Layer 5 — UI + Polish (Depend on All Layers)</div>
+  <div class="layer-cards">
+    <div class="dep-card l5-card"><div class="dep-card-name">All WBP_ HUD widgets</div><div class="dep-card-needs"><span>Needs:</span> All player components (for bindings)</div></div>
+    <div class="dep-card l5-card"><div class="dep-card-name">WBP_SkillSelectMenu</div><div class="dep-card-needs"><span>Needs:</span> AC_SkillSlotComponent, DT_Skills, BP_SavePoint</div></div>
+    <div class="dep-card l5-card"><div class="dep-card-name">WBP_PauseMenu</div><div class="dep-card-needs"><span>Needs:</span> BP_PlayerController, SM_Pause</div></div>
+    <div class="dep-card l5-card"><div class="dep-card-name">WBP_DeathScreen</div><div class="dep-card-needs"><span>Needs:</span> AC_HealthComponent.OnDeath</div></div>
+    <div class="dep-card l5-card"><div class="dep-card-name">PP_Enrage + PP_HitFlash</div><div class="dep-card-needs"><span>Needs:</span> AC_RageComponent events, AC_HealthComponent.OnDamageTaken</div></div>
+    <div class="dep-card l5-card"><div class="dep-card-name">Hit Reactions + Ragdoll</div><div class="dep-card-needs"><span>Needs:</span> All ABP_, PHYS_ assets, AC_EnemyHealthComponent events</div></div>
+  </div>
+</div>
+
+<!-- CRITICAL PATH -->
+<div class="sec"><span class="sec-id">// 02a</span><div class="sec-bar"></div><span class="sec-name">Critical Path</span><div class="sec-bar"></div></div>
+<div class="note">Systems that block the most downstream work. A delay here compounds across every system above it in the dependency chain.</div>
+
+<table class="crit-table">
+  <thead>
+    <tr><th>System</th><th>Depends On</th><th>Blocks (Cannot Start Without This)</th><th>Risk If Delayed</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="td-sys">FS_DamageInfo</td><td class="td-dep">Nothing</td><td class="td-blocks">Every damage call in the game</td><td class="risk-crit">CRITICAL — build day 1</td></tr>
+    <tr><td class="td-sys">All BPI_ Interfaces</td><td class="td-dep">Nothing</td><td class="td-blocks">Every system that talks to another</td><td class="risk-crit">CRITICAL — build day 1</td></tr>
+    <tr><td class="td-sys">IMC_Default + all IA_</td><td class="td-dep">Nothing</td><td class="td-blocks">ALL player input — nothing works without this</td><td class="risk-crit">CRITICAL — register Add Mapping Context first thing</td></tr>
+    <tr><td class="td-sys">AC_RageComponent</td><td class="td-dep">BPI_Rageable</td><td class="td-blocks">Weapon boost, Dash, Parry widen, Skill, ABP_ rage state, PP_Enrage</td><td class="risk-crit">CRITICAL — blocks 6 systems</td></tr>
+    <tr><td class="td-sys">AC_WeakPointComponent</td><td class="td-dep">BPI_WeakPointTarget, BPI_Rageable, AC_RageComponent</td><td class="td-blocks">Rage generation, all WP-based combat</td><td class="risk-high">HIGH — rage loop can't be tested without it</td></tr>
+    <tr><td class="td-sys">BP_EnemyBase</td><td class="td-dep">AC_EnemyHealthComponent, AC_WeakPointComponent, AC_StunComponent</td><td class="td-blocks">All 5 enemy child BPs, all BT_ trees, ArenaManager</td><td class="risk-high">HIGH — entire AI tier blocked</td></tr>
+    <tr><td class="td-sys">All AIC_ + BT_</td><td class="td-dep">BP_EnemyBase, NavMesh</td><td class="td-blocks">Arena playability, wave testing</td><td class="risk-high">HIGH — can't test arena without AI</td></tr>
+    <tr><td class="td-sys">All ABP_ animations</td><td class="td-dep">SK_ meshes, all enemy + player BPs</td><td class="td-blocks">Hit reactions, ragdoll, footstep notifies</td><td class="risk-med">MEDIUM — game functional without it, not presentable</td></tr>
+  </tbody>
+</table>
+
+<!-- PARALLEL GROUPS -->
+<div class="sec"><span class="sec-id">// 02b</span><div class="sec-bar"></div><span class="sec-name">Can Be Built in Parallel</span><div class="sec-bar"></div></div>
+<div class="note">Groups A, B, and C have no cross-dependencies and can be developed simultaneously by different team members. Note ordering within groups where indicated — items marked with ↳ must be built after the item above them in the same group.</div>
+
+<div class="parallel-grid">
+  <div class="par-box">
+    <div class="par-label">Group A — Movement + Utility (after Layer 2)</div>
+    <ul>
+      <li>BP_GrappleAnchor</li>
+      <li class="ordering">↳ AC_MovementExtComponent (needs GrappleAnchor)</li>
+      <li>BP_SatchelCharge</li>
+      <li class="ordering">↳ AC_UtilityComponent (needs SatchelCharge)</li>
+    </ul>
+  </div>
+  <div class="par-box">
+    <div class="par-label">Group B — Projectiles + Parry (after Layer 1)</div>
+    <ul>
+      <li>BP_Projectile_Base</li>
+      <li class="ordering">↳ BP_Projectile_Enemy (needs Projectile_Base)</li>
+      <li>AC_ParryComponent</li>
+      <li class="ordering">↳ BP_ParryWindow (needs ParryComponent)</li>
+    </ul>
+  </div>
+  <div class="par-box">
+    <div class="par-label">Group C — UI + Audio + VFX (after Layer 4)</div>
+    <ul>
+      <li>All WBP_ UI widgets</li>
+      <li>PP_Enrage + PP_HitFlash</li>
+      <li>Audio SC_/SM_ setup</li>
+      <li>VFX NS_ assets</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══ 03 PLAYTEST CHECKLIST ══ -->
+<div class="page">
+<div class="sec"><span class="sec-id">// 03</span><div class="sec-bar"></div><span class="sec-name">Playtest Checklist</span><div class="sec-bar"></div></div>
+
+<div class="note">
+  <strong>How to use this checklist:</strong> Run through every item in order before declaring the vertical slice complete. CRITICAL items are hard blockers — the VS cannot ship with any CRITICAL failures. HIGH items are strong recommendations. MEDIUM and LOW are polish flags. Each item maps to a specific debug test from the BP Guide.
+</div>
+
+<div class="sev-legend">
+  <span class="sev-crit">CRIT</span><span>Hard blocker — VS cannot ship</span>
+  <span class="sev-high">HIGH</span><span>Serious gameplay issue</span>
+  <span class="sev-med">MED</span><span>Noticeable but not game-breaking</span>
+  <span class="sev-low">LOW</span><span>Polish / feel issue</span>
+</div>
+
+<!-- 01 INPUT & MOVEMENT -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">01</span> Input &amp; Movement</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-01</td><td class="td-test">All WASD / mouse inputs respond from game start<p>No input fires if Add Mapping Context isn't called in BP_PlayerController BeginPlay</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Check BP Guide Part 3 §01 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-02</td><td class="td-test">Player moves at correct speed in all 8 directions<p>No animation required — collision and velocity only</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-03</td><td class="td-test">Player can jump<p>IA_Jump wired to Character Jump function</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-04</td><td class="td-test">Grapple pulls player to anchor point<p>Test on at least 3 different anchor positions in the arena</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">Fails silently if no BP_GrappleAnchor in level</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-05</td><td class="td-test">Grapple does nothing when aimed at non-anchor surface<p>Should fail silently — no error, no movement</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-06</td><td class="td-test">Dash fires in correct direction during Enraged State<p>Works mid-air. Blocked outside Enraged State.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 1 §09 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-07</td><td class="td-test">Dash does nothing outside Enraged State<p>IsEnraged interface check must gate it</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">IM-08</td><td class="td-test">Player locomotion animation plays during movement<p>T-pose = ABP_Player not assigned on Mesh component</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 3 §02 debug</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 02 WEAPONS -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">02</span> Weapons</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-01</td><td class="td-test">All 3 weapons spawn in inventory slots at game start<p>WeaponSlots.Num() = 3</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §07 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-02</td><td class="td-test">Weapon wheel opens on hold, closes on release, switches correctly<p>Test all 3 slots. Cursor shows on open, hides on close.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-03</td><td class="td-test">Pistol deals correct damage and deducts ammo per shot<p>Values match DT_Weapons Pistol row</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-04</td><td class="td-test">Pistol parries green projectiles and generates ammo<p>Normal parry = deflect. Perfect parry = enemy staggers.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 1 §08 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-05</td><td class="td-test">Shotgun fires spread of pellets, all can damage independently<p>8 debug traces visible. At close range, multiple pellets hit.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §02 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-06</td><td class="td-test">Shotgun penetrates up to 3 lined-up Fodder<p>Pellet should continue through bodies</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-07</td><td class="td-test">AR starts slow, accelerates to max fire rate on sustained fire<p>CurrentFireInterval visibly decreasing</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §02 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-08</td><td class="td-test">AR slows player movement speed while firing, restores on release<p>MaxWalkSpeed: 600 → 200 → 600</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-09</td><td class="td-test">Rage-boosted next shot deals 3× damage and consumes the boost<p>bNextShotBoosted reverts to false after one shot only</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §07 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">WP-10</td><td class="td-test">HUD ammo display updates correctly for all 3 weapons on switch and fire<p>Number decrements on fire, updates on weapon switch</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 03 RAGE SYSTEM -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">03</span> Rage System</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-01</td><td class="td-test">Hitting a weak point increases rage meter visibly<p>Each WP hit adds RageAmountPerHit from DT_Enemies row</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §06 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-02</td><td class="td-test">Non-WP hits do not add rage<p>Shooting enemy body should not fill the rage meter</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-03</td><td class="td-test">Full meter triggers Enraged State — all 4 abilities activate simultaneously<p>Weapon boost + Dash + Parry widen + Skill enable all at once</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §20 full loop test</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-04</td><td class="td-test">Enraged State lasts ~1.5 seconds<p>Measure with GetGameTimeSinceCreation print</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-05</td><td class="td-test">All 4 abilities revert correctly after state ends<p>Dash blocked, parry window narrow, skill disabled, no weapon boost</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">End-binding failure is the most common rage bug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-06</td><td class="td-test">Shooting WPs during Enraged State does not re-trigger enrage<p>Meter stays at 0 while bIsEnraged=true</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-07</td><td class="td-test">Rage meter rebuilds from 0 after state ends and triggers again correctly<p>Loop can repeat indefinitely without degradation</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-08</td><td class="td-test">HUD rage meter accurately reflects RageCurrent/RageMax (0–1)<p>Progress bar fills proportionally</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 1 §24 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">RG-09</td><td class="td-test">PP_Enrage effect activates and fades correctly with rage state<p>Screen colour shift on begin, reverts on end</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 3 §08 debug</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 04 ENEMY AI -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">04</span> Enemy AI</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-01</td><td class="td-test">All 5 enemy types detect the player and engage<p>TargetActor populates in BB Debugger on player entry to sight radius</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Player needs AIPerceptionStimuliSource component</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-02</td><td class="td-test">Brute moves to player, attacks, deals damage at correct animation frame<p>Damage applies on AN_Brute_AttackHit notify, not at swing start</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 3 §04 — notify timing test</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-03</td><td class="td-test">Brute armour must be stripped before health takes damage<p>AR breaks armour, Pistol WP hits then damage health</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §13 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-04</td><td class="td-test">Brute stuns after 3–4 seconds of sustained AR fire<p>Enemy stops attacking during stun. BT Debugger shows Stunned branch active.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 1 §15 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-05</td><td class="td-test">Flying Eye strafes laterally and fires parryable projectiles<p>EQS_FlyingEye_Strafe must be set up. Projectile turns green after 0.3s.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-06</td><td class="td-test">Shooting the Flying Eye's eye WP (index 0) freezes its movement<p>bImmobilised=true in BB Debugger immediately on eye hit</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §05 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-07</td><td class="td-test">Spawner retreats from player and spawns fodder within budget<p>Budget depletes on spawn, refills on fodder death. Stops at 0.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §05 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-08</td><td class="td-test">Melee fodder charges player directly<p>BT_Fodder_Melee: Move To → attack when in range</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-09</td><td class="td-test">Ranged fodder maintains distance and retreats when player is too close<p>Retreat branch has highest priority in Selector</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 2 §06 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-10</td><td class="td-test">All enemies play correct animations for locomotion, attack, stun, and death<p>T-pose = ABP_ not assigned. Check each enemy's Mesh → Anim Class.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 3 §03 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-11</td><td class="td-test">Enemy death triggers ragdoll, capsule disabled, corpse destroyed after ~5s<p>Player can walk through corpse area. Actor gone from Outliner after ~6.5s. Note: dissolve effect is post-VS — destroy without dissolve.</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 3 §06 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AI-12</td><td class="td-test">No enemy Behavior Tree freezes (stuck green node in BT Debugger)<p>Every BTT_ must have Finish Execute on all code paths</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §17 warning</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 05 UTILITY + PARRY -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">05</span> Utility + Parry</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-01</td><td class="td-test">Satchel Charge throws, fuse ticks 2s, detonates with shockwave<p>Debug sphere visible at detonation matching damage radius</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §10 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-02</td><td class="td-test">Satchel blast jump — standing on satchel launches player upward<p>RadialForceComponent bImpulseVelChange=true required</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-03</td><td class="td-test">Satchel Charge 45s cooldown gates re-throw<p>bCanThrow=false immediately after throw</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-04</td><td class="td-test">Parrying a green projectile deflects/destroys it and generates Pistol ammo<p>CanBeParried returns true only during 0.6s window after 0.3s travel</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §08 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-05</td><td class="td-test">Perfect parry staggers the source enemy<p>Stun applies via AC_StunComponent on OnPerfectParried</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-06</td><td class="td-test">Parry window is visibly wider during Enraged State<p>Debug sphere persists longer than outside enrage</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UT-07</td><td class="td-test">Grey (non-highlighted) projectiles cannot be parried<p>Parry input during grey projectile: no deflect, player takes damage</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 06 SKILL SYSTEM + SAVE POINT -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">06</span> Skill System + Save Point</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-01</td><td class="td-test">Special Skill activates only during Enraged State<p>Input outside enrage does nothing. Input during enrage executes skill.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §22 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-02</td><td class="td-test">Skill effect executes correctly and self-destructs<p>Skill actor gone from Outliner after Execute completes</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-03</td><td class="td-test">Save point opens skill selection menu on interact<p>BPI_Interactable.CanInteract returns false during active arena</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 1 §22 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-04</td><td class="td-test">Selecting a skill in the menu equips it — HUD icon updates<p>WBP_SkillSlotDisplay icon changes immediately</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-05</td><td class="td-test">Equipped skill persists after stopping and restarting PIE<p>SaveSlot_01.sav file exists in Saved/SaveGames/</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 2 §09 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">SK-06</td><td class="td-test">Skill slot on HUD glows during Enraged State, dims on end<p>Visual feedback that skill is available</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 07 ARENA + WAVE SYSTEM -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">07</span> Arena + Wave System</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-01</td><td class="td-test">Arena wave spawns enemies at correct BP_EnemySpawner positions<p>Multiple spawner positions used randomly across runs</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §08 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-02</td><td class="td-test">Each wave row spawns at its configured SpawnDelay timing<p>Staggered spawning creates wave feel, not all at once</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-03</td><td class="td-test">OnWaveComplete fires when all enemies are dead<p>ActiveEnemies.Num() reaches 0 → event fires</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 2 §08 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-04</td><td class="td-test">NavMesh covers all floor area enemies need to path through<p>Press P in PIE — green overlay must cover the full arena floor</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Without this all AI movement breaks</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-05</td><td class="td-test">Grapple anchor points are reachable from normal play positions<p>No anchors placed behind walls or in unreachable geometry</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AR-06</td><td class="td-test">Save point is accessible and not inside geometry<p>Player overlap trigger activates correctly</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 08 UI + FEEDBACK -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">08</span> UI + Feedback</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-01</td><td class="td-test">HUD visible from game start — health bar, rage meter, ammo, skill slot<p>WBP_HUD created in BP_PlayerController BeginPlay</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 1 §24 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-02</td><td class="td-test">Health bar decreases on damage, colour shifts red below 20%<p>Ratio = CurrentHealth / MaxHealth correctly bound</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 2 §11 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-03</td><td class="td-test">PP_HitFlash — brief white screen flash on player taking damage<p>0.15s spike. Should feel like a sharp impact.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">BP Guide Part 3 §08 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-04</td><td class="td-test">Camera shake fires on player taking damage<p>Short directional jolt. Not nauseating on repeated hits.</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 2 §10 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-05</td><td class="td-test">Pause menu opens/closes correctly, game pauses and resumes<p>SFX ducks on pause. Input blocked to character while paused.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 3 §10 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-06</td><td class="td-test">Death screen appears after player death animation, respawn works<p>2.5s delay before screen shows. Respawn reloads the level correctly.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">BP Guide Part 3 §10 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">UI-07</td><td class="td-test">No UI elements clip outside screen bounds or overlap incorrectly<p>Check on 1920×1080 and 1280×720</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 09 AUDIO -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">09</span> Audio</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AU-01</td><td class="td-test">All 3 weapons have distinct fire sounds<p>Pistol, Shotgun, and AR should feel sonically different</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AU-02</td><td class="td-test">Footstep sounds play on movement at correct cadence<p>Left/right alternating. Sound matches surface type.</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 3 §05 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AU-03</td><td class="td-test">Satchel fuse ticking and explosion sounds play<p>Audio gives the player time pressure cue before explosion</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AU-04</td><td class="td-test">SFX ducks when pause menu is open<p>SM_Pause pushed correctly. Pop on close restores volume.</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">BP Guide Part 3 §09 debug</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">AU-05</td><td class="td-test">No audio asset reference errors in the Output Log during play<p>SC_ cues with null sound waves generate log warnings</p></td><td class="td-sev"><span class="sev-low">LOW</span></td><td class="td-hint">Check Window → Output Log for LogAudio warnings</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 10 STABILITY + CRASHES -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">10</span> Stability + Crashes</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes / Failure Hint</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-01</td><td class="td-test">Full playthrough: spawn → fight full wave → win → no crash<p>Must complete without editor or game crash</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Run 3 consecutive times</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-02</td><td class="td-test">Player death → respawn → fight again — no crash or broken state<p>Respawn must fully reset player state. Test 3 times.</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Rage meter, health, ammo must all reset correctly</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-03</td><td class="td-test">Rapid weapon switching during combat — no crash<p>Switch weapons every 0.5s while firing and taking damage</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-04</td><td class="td-test">Multiple satchel detonations in quick succession — no crash<p>Cooldown should prevent this but test edge cases</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint"></td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-05</td><td class="td-test">No Blueprint access-none (null reference) errors in Output Log<p>Filter log by "Warning" and "Error" during a full play session</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">Null refs are time bombs — fix before VS ships</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-06</td><td class="td-test">Frame rate stays above 30 FPS with full wave active (enemy + VFX peak)<p>Use Stat FPS overlay (tilde → stat fps)</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">Profile with Unreal Insights if consistently low</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">ST-07</td><td class="td-test">PIE restart (stop + play) leaves no lingering actors or broken state<p>Second PIE session should behave identically to the first</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">Persistent actors from previous session = design bug</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 11 FEEL + GDD ALIGNMENT -->
+<div class="chk-section">
+  <div class="chk-head"><span class="chk-num">11</span> Feel + GDD Alignment</div>
+  <div class="note note-teal" style="margin-bottom:12px;font-size:12px;">Subjective feel tests. Pass/fail based on team judgment against the GDD pillars: <strong>Precision Combat, Momentum &amp; Mobility, Power Spikes</strong>. At least two team members should run these independently and agree on pass/fail.</div>
+  <table class="chk">
+    <thead><tr><th class="td-pass">Pass</th><th class="td-id">ID</th><th>Test</th><th class="td-sev">Sev</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-01</td><td class="td-test">Hitting a weak point feels different from a body shot<p>Should feel rewarding — VFX, audio, and rage gain distinguish WP hits</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">GDD Pillar: Precision Combat</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-02</td><td class="td-test">Enraged State feels like a power spike — not just a stat boost<p>PP effect + all 4 abilities + audio cue should create a "moment"</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">GDD Pillar: Power Spikes — the core selling point</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-03</td><td class="td-test">Grapple movement through the arena feels fast and fluid<p>No awkward pausing. Player should be able to stay airborne across the arena.</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">GDD Pillar: Momentum &amp; Mobility</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-04</td><td class="td-test">The player feels punished for hesitating (missed WPs = no rage)<p>A player who only body-shots should rarely trigger Enraged State</p></td><td class="td-sev"><span class="sev-high">HIGH</span></td><td class="td-hint">GDD: "punishes hesitation"</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-05</td><td class="td-test">The Satchel Charge feels like a tactical tool, not an afterthought<p>Can a player meaningfully use it to escape, crowd control, and blast jump in one session?</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">GDD Section 06: Utility System</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-06</td><td class="td-test">Combat flow has rhythm — the rage loop creates a discernible pattern<p>Players should naturally find themselves cycling: build rage → explode → repeat</p></td><td class="td-sev"><span class="sev-crit">CRIT</span></td><td class="td-hint">GDD Section 03: Core Combat Loop</td></tr>
+      <tr><td class="td-pass"><span class="pass-box"></span></td><td class="td-id">FL-07</td><td class="td-test">The art style reads clearly — enemies and weapons stand out against environments<p>Deep contrasting shadows. Cyberpunk neon + body horror aesthetic legible.</p></td><td class="td-sev"><span class="sev-med">MED</span></td><td class="td-hint">GDD Section 10: Art Style</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- end checklist page -->
+
+<footer>
+  <span>Project <span>Anomaly</span> — Vertical Slice Document · Scope + Dependencies + Checklist</span>
+  <span>GDD v1.1 · TDD v1.1 · 54 checklist items · 4 build phases</span>
+</footer>
+
+</div><!-- end .page -->
+</body>
+</html>

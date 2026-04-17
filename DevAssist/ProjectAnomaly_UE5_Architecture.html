@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Anomaly — UE5.4 Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap');
+
+:root {
+  --bg:#080c10;--bg1:#0d1117;--bg2:#111820;--bg3:#161e28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --red:#ff4757;--orange:#ff9f43;--teal:#1dd1a1;--blue:#54a0ff;
+  --purple:#a29bfe;--pink:#fd79a8;--yellow:#ffd32a;
+  --text:#c9d1d9;--muted:#586069;--muted2:#8b949e;
+  --mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+
+/* HEADER */
+header{padding:48px 56px 36px;border-bottom:1px solid var(--border2);position:relative;overflow:hidden;}
+header::after{content:'ANOMALY';position:absolute;right:-10px;bottom:-30px;font-family:var(--display);font-size:180px;font-weight:800;color:var(--red);opacity:0.04;letter-spacing:-8px;pointer-events:none;}
+.hd-eyebrow{font-size:10px;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
+.hd-title{font-family:var(--display);font-size:42px;font-weight:800;line-height:1;margin-bottom:6px;letter-spacing:-1px;}
+.hd-title em{color:var(--red);font-style:normal;}
+.hd-sub{font-size:11px;color:var(--muted2);letter-spacing:1px;margin-bottom:20px;}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid;font-weight:500;}
+.tag-r{color:var(--red);border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.08);}
+.tag-t{color:var(--teal);border-color:rgba(29,209,161,.25);background:rgba(29,209,161,.06);}
+.tag-b{color:var(--blue);border-color:rgba(84,160,255,.25);background:rgba(84,160,255,.06);}
+.tag-o{color:var(--orange);border-color:rgba(255,159,67,.25);background:rgba(255,159,67,.06);}
+.tag-p{color:var(--purple);border-color:rgba(162,155,254,.25);background:rgba(162,155,254,.08);}
+.tag-y{color:var(--yellow);border-color:rgba(255,211,42,.25);background:rgba(255,211,42,.07);}
+.tag-pk{color:var(--pink);border-color:rgba(253,121,168,.25);background:rgba(253,121,168,.07);}
+
+/* LAYOUT */
+.page{max-width:1260px;margin:0 auto;padding:0 40px 100px;}
+
+/* SECTION */
+.sec{display:flex;align-items:center;gap:14px;margin:52px 0 22px;}
+.sec-id{font-size:10px;color:var(--red);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
+.sec-bar{flex:1;height:1px;background:var(--border2);}
+.sec-name{font-family:var(--display);font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+
+/* NOTE */
+.note{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--red);padding:18px 22px;border-radius:2px;margin-bottom:24px;font-size:12.5px;color:var(--muted2);line-height:1.8;}
+.note strong{color:var(--text);}
+
+/* ABBR GRID */
+.abbr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;border:1px solid var(--border2);border-radius:2px;overflow:hidden;background:var(--border);}
+.abbr-cell{background:var(--bg2);padding:12px 16px;display:flex;gap:12px;align-items:center;}
+.abbr-def{font-size:11.5px;color:var(--muted2);line-height:1.4;}
+.abbr-def strong{color:var(--text);display:block;font-size:12px;}
+
+/* TREE */
+.tree-wrap{background:var(--bg1);border:1px solid var(--border2);border-radius:3px;overflow:hidden;}
+.tree-toolbar{background:var(--bg3);padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.tree-dot{width:10px;height:10px;border-radius:50%;}
+.tree-label{font-size:11px;color:var(--muted);margin-left:6px;letter-spacing:1px;}
+.tree-body{padding:20px 24px;overflow-x:auto;}
+
+/* Each row = indent + name + note on one line, wrapping prevented by keeping it in a table */
+.tree-table{border-collapse:collapse;width:100%;}
+.tree-table td{padding:2px 0;vertical-align:baseline;white-space:nowrap;}
+.td-indent{color:var(--muted);font-size:12px;padding-right:6px;user-select:none;}
+.td-name{font-size:12.5px;font-weight:500;padding-right:16px;}
+.td-note{font-size:11px;color:var(--muted);white-space:normal;}
+/* name colours */
+.fn-dir{color:var(--teal);}
+.fn-bp{color:var(--text);}
+.fn-ac{color:var(--blue);}
+.fn-bpi{color:var(--purple);}
+.fn-da{color:var(--orange);}
+.fn-dt{color:var(--orange);}
+.fn-wbp{color:var(--pink);}
+.fn-bt{color:var(--yellow);}
+.fn-fs{color:var(--muted2);}
+.fn-ai{color:var(--red);}
+/* inline badge */
+.ib{font-size:9px;padding:1px 5px;border-radius:1px;margin-left:5px;font-weight:700;letter-spacing:1px;vertical-align:middle;display:inline-block;}
+.ib-abs{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);}
+.ib-ext{background:rgba(84,160,255,.1);color:var(--blue);border:1px solid rgba(84,160,255,.25);}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:20px 22px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card.c-red::before{background:var(--red);}
+.card.c-teal::before{background:var(--teal);}
+.card.c-blue::before{background:var(--blue);}
+.card.c-orange::before{background:var(--orange);}
+.card.c-purple::before{background:var(--purple);}
+.card.c-yellow::before{background:var(--yellow);}
+.card-type{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.card.c-red .card-type{color:var(--red);}
+.card.c-teal .card-type{color:var(--teal);}
+.card.c-blue .card-type{color:var(--blue);}
+.card.c-orange .card-type{color:var(--orange);}
+.card.c-purple .card-type{color:var(--purple);}
+.card.c-yellow .card-type{color:var(--yellow);}
+.card-name{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:9px;letter-spacing:.3px;}
+.card-desc{font-size:12px;color:var(--muted2);line-height:1.65;margin-bottom:12px;}
+.card-vars{list-style:none;border-top:1px solid var(--border);padding-top:10px;}
+.card-vars li{font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;color:var(--text);}
+.card-vars li:last-child{border-bottom:none;}
+.card-vars li::before{content:'›';color:var(--muted);flex-shrink:0;}
+.card-vars .vt{color:var(--muted2);font-size:10.5px;margin-left:auto;white-space:nowrap;}
+
+/* INTERFACE TABLES */
+.itbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px;}
+.itbl-head{padding:10px 16px;font-size:10px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.itbl-head .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+table.itbl{width:100%;border-collapse:collapse;}
+table.itbl th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg1);}
+table.itbl td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+table.itbl tr:last-child td{border-bottom:none;}
+table.itbl tr:hover td{background:rgba(255,255,255,.015);}
+.td-fn{color:var(--teal);font-size:12px;white-space:nowrap;}
+.td-p{color:var(--orange);font-size:11px;}
+.td-d{color:var(--muted2);font-size:12px;}
+
+/* RULES */
+.rules{border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.rule{display:flex;gap:16px;padding:15px 18px;border-bottom:1px solid var(--border);align-items:flex-start;}
+.rule:last-child{border-bottom:none;}
+.rule-sym{font-family:var(--display);font-size:15px;font-weight:800;color:var(--red);flex-shrink:0;margin-top:1px;width:22px;text-align:center;}
+.rule-body strong{display:block;margin-bottom:3px;font-size:13px;}
+.rule-body p{font-size:12px;color:var(--muted2);line-height:1.65;}
+code{font-family:var(--mono);font-size:11px;background:rgba(29,209,161,.1);color:var(--teal);padding:1px 5px;border-radius:2px;}
+
+/* PHASES */
+.phase{border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px;display:flex;}
+.phase-num{writing-mode:vertical-rl;transform:rotate(180deg);padding:20px 13px;font-family:var(--display);font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ph1 .phase-num{background:rgba(255,71,87,.1);color:var(--red);}
+.ph2 .phase-num{background:rgba(255,159,67,.08);color:var(--orange);}
+.ph3 .phase-num{background:rgba(29,209,161,.07);color:var(--teal);}
+.phase-body{padding:18px 22px;flex:1;}
+.phase-body h4{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:12px;color:var(--muted2);margin-bottom:12px;line-height:1.6;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{font-size:10.5px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;color:var(--text);}
+
+footer{margin-top:80px;padding:20px 56px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);}
+footer span{color:var(--red);}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg1);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-eyebrow">// Technical Design Document v1.1</div>
+  <div class="hd-title">PROJECT <em>ANOMALY</em></div>
+  <div class="hd-sub">UE 5.4 — Blueprint Architecture &amp; Component Reference</div>
+  <div class="tag-row">
+    <span class="tag tag-r">Unreal Engine 5.4</span>
+    <span class="tag tag-t">Blueprint Framework</span>
+    <span class="tag tag-b">Modular Components</span>
+    <span class="tag tag-o">Data-Driven</span>
+    <span class="tag tag-p">GDD v1.1 Compliant</span>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ══ 00 ABBREVIATION INDEX ══ -->
+<div class="sec"><span class="sec-id">// 00</span><div class="sec-bar"></div><span class="sec-name">Naming Convention &amp; Abbreviation Index</span><div class="sec-bar"></div></div>
+<div class="note">All assets follow UE5 community naming conventions. Every prefix is listed below. When adding new assets, always pick the matching prefix — this keeps the Content Browser filterable and the architecture self-documenting.</div>
+<div class="abbr-grid">
+  <div class="abbr-cell"><span class="tag tag-r" style="flex-shrink:0">BP_</span><div class="abbr-def"><strong>Blueprint</strong>Actor, Character, Pawn, or utility Blueprint</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">AC_</span><div class="abbr-def"><strong>ActorComponent</strong>Modular component attached to an actor</div></div>
+  <div class="abbr-cell"><span class="tag tag-p" style="flex-shrink:0">BPI_</span><div class="abbr-def"><strong>Blueprint Interface</strong>Cross-system communication contract</div></div>
+  <div class="abbr-cell"><span class="tag tag-o" style="flex-shrink:0">DA_</span><div class="abbr-def"><strong>Data Asset</strong>Primary Data Asset — designer-tunable values</div></div>
+  <div class="abbr-cell"><span class="tag tag-o" style="flex-shrink:0">DT_</span><div class="abbr-def"><strong>DataTable</strong>Table of struct rows (CSV-style)</div></div>
+  <div class="abbr-cell"><span class="tag tag-o" style="flex-shrink:0">FS_</span><div class="abbr-def"><strong>Struct (FStruct)</strong>Custom data structure used across systems</div></div>
+  <div class="abbr-cell"><span class="tag tag-pk" style="flex-shrink:0">WBP_</span><div class="abbr-def"><strong>Widget Blueprint</strong>UMG UI widget</div></div>
+  <div class="abbr-cell"><span class="tag tag-y" style="flex-shrink:0">BT_</span><div class="abbr-def"><strong>Behavior Tree</strong>AI behavior tree asset</div></div>
+  <div class="abbr-cell"><span class="tag tag-y" style="flex-shrink:0">BB_</span><div class="abbr-def"><strong>Blackboard</strong>AI Blackboard data asset</div></div>
+  <div class="abbr-cell"><span class="tag tag-y" style="flex-shrink:0">BTT_</span><div class="abbr-def"><strong>BT Task</strong>Behavior Tree leaf task node</div></div>
+  <div class="abbr-cell"><span class="tag tag-y" style="flex-shrink:0">BTS_</span><div class="abbr-def"><strong>BT Service</strong>Behavior Tree polling service node</div></div>
+  <div class="abbr-cell"><span class="tag tag-y" style="flex-shrink:0">BTD_</span><div class="abbr-def"><strong>BT Decorator</strong>Behavior Tree condition/gate node</div></div>
+  <div class="abbr-cell"><span class="tag tag-r" style="flex-shrink:0">AIC_</span><div class="abbr-def"><strong>AI Controller</strong>Blueprint AIController subclass</div></div>
+  <div class="abbr-cell"><span class="tag tag-t" style="flex-shrink:0">EQS_</span><div class="abbr-def"><strong>EQS Query</strong>Environment Query System spatial query</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">ABP_</span><div class="abbr-def"><strong>Anim Blueprint</strong>Animation state machine</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">AM_</span><div class="abbr-def"><strong>Anim Montage</strong>UE animation montage</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">NS_</span><div class="abbr-def"><strong>Niagara System</strong>VFX particle system</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">SC_</span><div class="abbr-def"><strong>Sound Cue</strong>Audio asset</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">M_</span><div class="abbr-def"><strong>Material</strong>UE Material asset</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">MI_</span><div class="abbr-def"><strong>Material Instance</strong>Parameterised material instance</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">MF_</span><div class="abbr-def"><strong>Material Function</strong>Reusable material logic node graph</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">PP_</span><div class="abbr-def"><strong>Post Process Material</strong>Screen-space post process effect</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">SK_</span><div class="abbr-def"><strong>Skeletal Mesh</strong>Rigged mesh asset for characters/enemies</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">SM_</span><div class="abbr-def"><strong>Static Mesh</strong>Non-deforming mesh (props, environment)</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">PHYS_</span><div class="abbr-def"><strong>Physics Asset</strong>Ragdoll collision body setup for SK_ meshes</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">BS_</span><div class="abbr-def"><strong>Blend Space</strong>Animation blending across 1D or 2D parameter axes</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">AN_</span><div class="abbr-def"><strong>Anim Notify</strong>Point-in-time event fired from an animation</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">ANS_</span><div class="abbr-def"><strong>Anim Notify State</strong>Duration-based event window in an animation</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">IKR_</span><div class="abbr-def"><strong>IK Rig</strong>Inverse kinematics definition for a skeleton</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">IKRT_</span><div class="abbr-def"><strong>IK Retargeter</strong>Remaps animations between different skeletons</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">IA_</span><div class="abbr-def"><strong>Input Action</strong>Enhanced Input action asset</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">IMC_</span><div class="abbr-def"><strong>Input Mapping Context</strong>Binds IA_ assets to hardware keys</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">SC_</span><div class="abbr-def"><strong>Sound Cue</strong>Audio asset with randomisation/mixing nodes</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">SB_</span><div class="abbr-def"><strong>Sound Base</strong>Base class for all audio assets</div></div>
+  <div class="abbr-cell"><span class="tag tag-b" style="flex-shrink:0">WBP_</span><div class="abbr-def"><strong>Widget Blueprint</strong>UMG UI widget</div></div>
+</div>
+
+
+<!-- ══ 01 FOLDER STRUCTURE ══ -->
+<div class="sec"><span class="sec-id">// 01</span><div class="sec-bar"></div><span class="sec-name">Content Folder Structure</span><div class="sec-bar"></div></div>
+<div class="tree-wrap">
+  <div class="tree-toolbar">
+    <div class="tree-dot" style="background:#ff5f57"></div>
+    <div class="tree-dot" style="background:#febc2e"></div>
+    <div class="tree-dot" style="background:#28c840"></div>
+    <span class="tree-label">Content / ProjectAnomaly /</span>
+  </div>
+  <div class="tree-body">
+  <table class="tree-table">
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Core/</td><td class="td-note">Engine-level singletons, never modified per feature</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">GameModes/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_GM_Anomaly</td><td class="td-note">Main game mode</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">BP_GS_Anomaly</td><td class="td-note">Game State — global read-only data</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">GameInstances/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">BP_GI_Anomaly</td><td class="td-note">Persists across levels; holds save reference</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">SaveGame/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-bp">BP_Save_Anomaly</td><td class="td-note">SaveGame object — equipped skill, progression flags</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Player/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Character/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_PlayerCharacter <span class="ib ib-abs">MASTER BP</span></td><td class="td-note">Root player actor; owns all AC_ components</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">BP_PlayerController</td><td class="td-note">Input routing; HUD ownership</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Camera/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_PlayerCamera</td><td class="td-note">Spring arm, FOV, shake management</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">BP_CameraShake_Hit</td><td class="td-note">Played on damage taken</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Animation/</td><td class="td-note">All player animation assets</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">ABP_Player</td><td class="td-note">Player animation state machine (locomotion, aim, death)</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-dir">Montages/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   │   ├──</td><td class="td-name fn-bp">AM_Player_Grapple</td><td class="td-note">Grapple launch and swing</td></tr>
+    <tr><td class="td-indent">│   │   │   ├──</td><td class="td-name fn-bp">AM_Player_Dash</td><td class="td-note">Dash burst</td></tr>
+    <tr><td class="td-indent">│   │   │   ├──</td><td class="td-name fn-bp">AM_Player_Parry</td><td class="td-note">Parry input animation</td></tr>
+    <tr><td class="td-indent">│   │   │   └──</td><td class="td-name fn-bp">AM_Player_Death</td><td class="td-note">Death sequence</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-dir">BlendSpaces/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   │   └──</td><td class="td-name fn-bp">BS_Player_Locomotion</td><td class="td-note">Speed/direction blend for walk/run/strafe</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Notifies/</td><td class="td-note">Player anim notify assets</td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-bp">AN_Player_FootstepL</td><td class="td-note">Triggers left foot audio/VFX</td></tr>
+    <tr><td class="td-indent">│   │       └──</td><td class="td-name fn-bp">AN_Player_FootstepR</td><td class="td-note">Triggers right foot audio/VFX</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Mesh/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Player</td><td class="td-note">Player skeletal mesh</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">PHYS_Player</td><td class="td-note">Player physics asset (ragdoll on death)</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">IKR_Player</td><td class="td-note">IK Rig for foot/hand IK solving</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">Components/</td><td class="td-note">All player ActorComponents</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_HealthComponent</td><td class="td-note">HP state; damage intake; death event</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_RageComponent</td><td class="td-note">Rage meter; Enraged State timer; event broadcaster</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_WeaponComponent</td><td class="td-note">3-slot weapon inventory; fire delegation; ammo</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_MovementExtComponent</td><td class="td-note">Grapple logic + rage-gated Dash</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_ParryComponent</td><td class="td-note">Parry window timing; perfect parry detection</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-ac">AC_UtilityComponent</td><td class="td-note">Satchel Charge throw, cooldown, detonation</td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-ac">AC_SkillSlotComponent</td><td class="td-note">Special Skill registry; equip/activate; save integration</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Weapons/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Base/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_WeaponBase <span class="ib ib-abs">ABSTRACT</span></td><td class="td-note">Parent; reads all stats from DA_WeaponData row</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-da">DA_WeaponData</td><td class="td-note">Data Asset — damage, ammo, SFX refs, flags</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Pistol/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Weapon_Pistol</td><td class="td-note">Hitscan; parry ammo gen on fire</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Weapon_Pistol</td><td class="td-note">Pistol skeletal mesh</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-bp">AM_Pistol_Fire</td><td class="td-note">Fire anim montage</td></tr>
+    <tr><td class="td-indent">│   │       └──</td><td class="td-name fn-bp">AM_Pistol_Reload</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Shotgun/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Weapon_Shotgun</td><td class="td-note">8-pellet spread; penetrates up to 3 targets</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Weapon_Shotgun</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note">AM_Shotgun_Fire, AM_Shotgun_Reload, AM_Shotgun_Pump</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">AssaultRifle/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bp">BP_Weapon_AssaultRifle</td><td class="td-note">Wind-up rate; movement penalty while sustained</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bp">SK_Weapon_AssaultRifle</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note">AM_AR_Fire, AM_AR_Reload, AM_AR_WindUp</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Skills/</td><td class="td-note">Special Skill slot — swapped at Save Points</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Base/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_SkillBase <span class="ib ib-abs">ABSTRACT</span></td><td class="td-note">Parent; reads name/icon/duration from DA_SkillData</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-da">DA_SkillData</td><td class="td-note">Data Asset — name, icon, duration, class ref</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-bp">BP_Skill_[SkillName]</td><td class="td-note">One child BP per skill; adding a DT row auto-registers it</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Enemies/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Base/</td><td class="td-note">Shared by all enemy types</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_EnemyBase <span class="ib ib-abs">ABSTRACT</span></td><td class="td-note">Implements BPI_Damageable + BPI_WeakPointTarget</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-da">DA_EnemyData</td><td class="td-note">Health, armour, WP count, stun threshold, BT ref</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ac">AC_EnemyHealthComponent</td><td class="td-note">Health + armour pools; death; stagger state</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ac">AC_WeakPointComponent</td><td class="td-note">WP collision volumes; hit confirmation; rage notify</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ac">AC_StunComponent</td><td class="td-note">Stun accumulator; stun timer; restores AI on expiry</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">AIPerceptionComponent <span class="ib ib-ext">UE NATIVE</span></td><td class="td-note">Sight + hearing config; writes to BB on detect</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Brute/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Enemy_Brute</td><td class="td-note">3 WPs; armour-gated; chain-gun; stuns at 3–4s</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ai">AIC_Brute</td><td class="td-note">AI Controller</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BT_Brute</td><td class="td-note">patrol → engage → heavy attack</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BB_Brute</td><td class="td-note">TargetActor, bIsStunned, bArmourBroken, AttackCooldownReady</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Enemy_Brute</td><td class="td-note">Brute skeletal mesh</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">PHYS_Enemy_Brute</td><td class="td-note">Physics asset — ragdoll on death</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-bp">ABP_Brute</td><td class="td-note">Brute animation state machine</td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-bp">BS_Brute_Locomotion</td><td class="td-note">Speed blend: idle → walk → charge</td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-dir">Montages/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │       │   ├──</td><td class="td-name fn-bp">AM_Brute_Attack</td><td class="td-note">Chain-gun swing — contains AN_Brute_AttackHit notify</td></tr>
+    <tr><td class="td-indent">│   │       │   ├──</td><td class="td-name fn-bp">AM_Brute_Stun</td><td class="td-note">Stagger loop — played by AC_StunComponent on stun</td></tr>
+    <tr><td class="td-indent">│   │       │   ├──</td><td class="td-name fn-bp">AM_Brute_ArmourBreak</td><td class="td-note">Armour crumble reaction</td></tr>
+    <tr><td class="td-indent">│   │       │   └──</td><td class="td-name fn-bp">AM_Brute_Death</td><td class="td-note">Transitions to ragdoll at end</td></tr>
+    <tr><td class="td-indent">│   │       └──</td><td class="td-name fn-dir">Notifies/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │           ├──</td><td class="td-name fn-bp">AN_Brute_AttackHit</td><td class="td-note">Point notify — triggers damage application at impact frame</td></tr>
+    <tr><td class="td-indent">│   │           └──</td><td class="td-name fn-bp">ANS_Brute_AttackWindow</td><td class="td-note">State notify — marks parry-eligible window of swing</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">FlyingEye/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Enemy_FlyingEye</td><td class="td-note">2 WPs; eye WP stops movement; fires parryable projectiles</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ai">AIC_FlyingEye</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BT_FlyingEye</td><td class="td-note">strafe → fire → reposition</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BB_FlyingEye</td><td class="td-note">TargetActor, StrafeDestination, bEyeDestroyed, bImmobilised</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">EQS_FlyingEye_Strafe</td><td class="td-note">Finds lateral strafe positions around player</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Enemy_FlyingEye</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">PHYS_Enemy_FlyingEye</td><td class="td-note">Ragdoll — collapses and falls on death</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │       ├──</td><td class="td-name fn-bp">ABP_FlyingEye</td><td class="td-note">State machine: hover → strafe → immobilised</td></tr>
+    <tr><td class="td-indent">│   │       └──</td><td class="td-name fn-dir">Montages/</td><td class="td-note">AM_FlyingEye_Fire, AM_FlyingEye_Death, AM_FlyingEye_EyeHit</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Spawner/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Enemy_Spawner</td><td class="td-note">5 WPs; retreats; spawns fodder; priority target</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ac">AC_SpawnDirectorComponent</td><td class="td-note">Fodder spawn budget, timer, spawn point selection</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ai">AIC_Spawner</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BT_Spawner</td><td class="td-note">flee from player → trigger fodder spawn</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BB_Spawner</td><td class="td-note">TargetActor, RetreatDestination, SpawnBudget, bCanSpawn</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">EQS_Spawner_Retreat</td><td class="td-note">Finds positions maximally far from player</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Enemy_Spawner</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">PHYS_Enemy_Spawner</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note">ABP_Spawner, AM_Spawner_Retreat, AM_Spawner_Spawn, AM_Spawner_Death</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Fodder/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Enemy_FodderMelee</td><td class="td-note">0 WPs; rushes player; dangerous in groups</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">BP_Enemy_FodderRanged</td><td class="td-note">0 WPs; keeps distance; fires parryable projectiles</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-ai">AIC_Fodder</td><td class="td-note">Shared controller for both fodder subtypes</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BT_Fodder_Melee</td><td class="td-note">charge → melee swipe</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bt">BT_Fodder_Ranged</td><td class="td-note">maintain distance → fire → reposition</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Enemy_FodderMelee</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SK_Enemy_FodderRanged</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Animations/</td><td class="td-note">ABP_Fodder (shared), AM_Fodder_Run, AM_Fodder_Attack, AM_Fodder_Fire, AM_Fodder_Death</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">Shared_AI/</td><td class="td-note">BT nodes reused across all enemy types</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTT_FindPlayerLocation</td><td class="td-note">Task — writes player location to Blackboard</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTT_MoveToEQSResult</td><td class="td-note">Task — moves to queried position</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTT_AttackMelee</td><td class="td-note">Task — triggers AM_; applies FS_DamageInfo to player</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTT_FireProjectile</td><td class="td-note">Task — spawns BP_Projectile_Enemy at target</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTT_SpawnFodder</td><td class="td-note">Task — calls AC_SpawnDirectorComponent::TrySpawnFodder()</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTS_UpdatePlayerLocation</td><td class="td-note">Service — ticks player pos to BB every 0.2s</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTS_CheckLineOfSight</td><td class="td-note">Service — line trace to player; writes bHasLOS to BB</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTD_IsStunned</td><td class="td-note">Decorator — blocks branch if AC_StunComponent is active</td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bt">BTD_IsArmourBroken</td><td class="td-note">Decorator — gates WP-exposed attack behaviour</td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-bt">BTD_PlayerInRange</td><td class="td-note">Decorator — float range check vs player distance</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Combat/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_Projectile_Base <span class="ib ib-abs">ABSTRACT</span></td><td class="td-note">Parent for all projectiles; implements BPI_Parryable</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_Projectile_Enemy</td><td class="td-note">Enemy-fired; parryable when highlighted green</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_SatchelCharge</td><td class="td-note">Physics actor; 2s fuse; URadialForceComponent</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_WeakPointActor</td><td class="td-note">Spawnable collision volume; child of enemy socket</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-bp">BP_ParryWindow</td><td class="td-note">Player overlap volume; active during parry input</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Arena/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_ArenaManager</td><td class="td-note">Wave orchestration; spawns from DT_ArenaWaves</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_EnemySpawner</td><td class="td-note">Placed actor; used by ArenaManager and Spawner enemy</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">BP_GrappleAnchor</td><td class="td-note">Environmental anchor; registers with AC_MovementExtComponent</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-bp">BP_SavePoint</td><td class="td-note">Implements BPI_Interactable; opens Skill menu + saves</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Input/</td><td class="td-note">Enhanced Input system — all input assets live here</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IMC_Default</td><td class="td-note">Default Input Mapping Context — assigned in BP_PlayerController</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Fire</td><td class="td-note">Started/Completed — triggers weapon fire and StopFire</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Parry</td><td class="td-note">Started</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Grapple</td><td class="td-note">Started</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Dash</td><td class="td-note">Started</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Utility</td><td class="td-note">Started — throws Satchel Charge</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Skill</td><td class="td-note">Started — activates equipped Special Skill</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_WeaponWheel</td><td class="td-note">Started/Completed — hold to open weapon wheel</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Move</td><td class="td-note">Axis 2D — WASD / left stick</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">IA_Look</td><td class="td-note">Axis 2D — mouse / right stick</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-bp">IA_Jump</td><td class="td-note">Started</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">VFX/</td><td class="td-note">All Niagara systems — no Blueprint logic here</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Combat/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_WeaponMuzzleFlash</td><td class="td-note">Spawned at weapon muzzle socket on fire</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_BulletImpact_Default</td><td class="td-note">Generic surface impact</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_BulletImpact_Armour</td><td class="td-note">Metal spark effect on armoured surfaces</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_WeakPointHit</td><td class="td-note">Burst played on confirmed WP hit</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_SatchelExplosion</td><td class="td-note">Satchel Charge detonation</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">NS_ParryDeflect</td><td class="td-note">Spark burst on successful parry</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Movement/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_GrappleTrail</td><td class="td-note">Rope/cable trail during grapple</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">NS_DashBurst</td><td class="td-note">Afterimage/speed burst on dash</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Rage/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">NS_EnrageActivate</td><td class="td-note">Full-body aura on enraged state begin</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">NS_EnrageAmbient</td><td class="td-note">Looping ambient during enraged state</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">Environment/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-bp">NS_Footstep_Dust</td><td class="td-note">Kicked up by footstep Anim Notifies</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Audio/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">SoundClasses/</td><td class="td-note">Hierarchy: Master → SFX → UI → Music → Voice</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SC_Master</td><td class="td-note">Root class — global volume control</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SC_SFX</td><td class="td-note">All in-world sound effects</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">SC_UI</td><td class="td-note">UI feedback sounds</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">SoundMixes/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">SM_Gameplay</td><td class="td-note">Default mix during play</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">SM_Pause</td><td class="td-note">Ducks SFX when paused</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Weapons/</td><td class="td-note">SC_ per weapon: fire, reload, empty click</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Player/</td><td class="td-note">SC_: footsteps (by surface), grunt, death, grapple, dash</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Enemies/</td><td class="td-note">SC_ per enemy: movement, attack, death, alert</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Combat/</td><td class="td-note">SC_: impact surfaces, parry, satchel fuse, explosion</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">UI/</td><td class="td-note">SC_: menu select, skill equip, rage activate, save confirm</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Materials/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Master/</td><td class="td-note">Parent materials — all MIs derive from these</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">M_Character_Master</td><td class="td-note">Base for all character/enemy materials</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">M_Weapon_Master</td><td class="td-note">Base for all weapon materials</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">M_Environment_Master</td><td class="td-note">Base for all level geometry</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Functions/</td><td class="td-note">Reusable MF_ nodes shared across master materials</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">MF_WeakPointGlow</td><td class="td-note">Emissive pulse used on WP actors and enemy materials</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-bp">MF_Dissolve</td><td class="td-note">Death dissolve effect driven by scalar parameter</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-bp">MF_ArmourCrack</td><td class="td-note">Damage-state crack overlay on armoured enemies</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Instances/</td><td class="td-note">Per-asset MI_ files referencing master materials</td></tr>
+    <tr><td class="td-indent">│   │   ├──</td><td class="td-name fn-dir">Characters/</td><td class="td-note">MI_Player, MI_Brute, MI_FlyingEye, MI_Spawner, MI_Fodder</td></tr>
+    <tr><td class="td-indent">│   │   └──</td><td class="td-name fn-dir">Weapons/</td><td class="td-note">MI_Pistol, MI_Shotgun, MI_AssaultRifle</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">PostProcess/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│       ├──</td><td class="td-name fn-bp">PP_Enrage</td><td class="td-note">Post process material — colour shift during Enraged State</td></tr>
+    <tr><td class="td-indent">│       └──</td><td class="td-name fn-bp">PP_HitFlash</td><td class="td-note">Brief white flash on player taking damage</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Meshes/</td><td class="td-note">Static mesh assets — environment, props, pickups</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Environment/</td><td class="td-note">SM_: floors, walls, columns, arena geometry</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Props/</td><td class="td-note">SM_: crates, barrels, cover objects</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">GrappleAnchors/</td><td class="td-note">SM_: visual anchor point meshes</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Levels/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bp">L_MainMenu</td><td class="td-note">Main menu level — no gameplay actors</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dir">Year3000/</td><td class="td-note">Act 1 levels</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dir">Sublevels/</td><td class="td-note">Streaming sublevels per arena zone</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">UI/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_HUD</td><td class="td-note">Root HUD widget; owned by BP_PlayerController</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_RageMeter</td><td class="td-note">Binds to AC_RageComponent via BPI_Rageable</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_HealthBar</td><td class="td-note">Binds to AC_HealthComponent</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_AmmoDisplay</td><td class="td-note">Binds to AC_WeaponComponent</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_SkillSlotDisplay</td><td class="td-note">Shows equipped skill icon + availability state</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_SkillSelectMenu</td><td class="td-note">Opened at BP_SavePoint; populates from DT_Skills</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_WeaponWheel</td><td class="td-note">Radial weapon switch overlay</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_PauseMenu</td><td class="td-note">Pause/resume; settings; quit</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-wbp">WBP_DeathScreen</td><td class="td-note">Shown on player death — respawn / main menu</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-wbp">WBP_LoadingScreen</td><td class="td-note">Shown during level transitions</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Interfaces/</td><td class="td-note">All cross-system communication — no direct class refs</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bpi">BPI_Damageable</td><td class="td-note">ReceiveDamage, IsAlive, GetCurrentHealth</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bpi">BPI_WeakPointTarget</td><td class="td-note">RegisterWeakPointHit, GetWeakPointCount, IsWeakPointExposed</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bpi">BPI_Rageable</td><td class="td-note">IsEnraged, GetRagePercent, NotifyWeakPointHit</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bpi">BPI_Parryable</td><td class="td-note">CanBeParried, OnParried, OnPerfectParried</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-bpi">BPI_Interactable</td><td class="td-note">Interact, GetInteractPrompt, CanInteract</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-bpi">BPI_SkillEquippable</td><td class="td-note">Execute, GetSkillData, IsReadyToUse</td></tr>
+
+    <tr><td class="td-indent">├──</td><td class="td-name fn-dir">Data/</td><td class="td-note">All tunable values live here — no hardcoded numbers in BPs</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dt">DT_Weapons</td><td class="td-note">Rows of FS_WeaponRow</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dt">DT_Enemies</td><td class="td-note">Rows of FS_EnemyRow</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dt">DT_Skills</td><td class="td-note">Rows of FS_SkillRow</td></tr>
+    <tr><td class="td-indent">│   ├──</td><td class="td-name fn-dt">DT_ArenaWaves</td><td class="td-note">Rows of FS_WaveRow</td></tr>
+    <tr><td class="td-indent">│   └──</td><td class="td-name fn-dt">DT_FootstepSurfaces</td><td class="td-note">Maps EPhysicalSurface → SC_ footstep sound cue</td></tr>
+
+    <tr><td class="td-indent">└──</td><td class="td-name fn-dir">Structs/</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">    ├──</td><td class="td-name fn-fs">FS_WeaponRow</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">    ├──</td><td class="td-name fn-fs">FS_EnemyRow</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">    ├──</td><td class="td-name fn-fs">FS_SkillRow</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">    ├──</td><td class="td-name fn-fs">FS_WaveRow</td><td class="td-note"></td></tr>
+    <tr><td class="td-indent">    └──</td><td class="td-name fn-fs">FS_DamageInfo</td><td class="td-note">Universal damage payload — routes all damage in game</td></tr>
+
+  </table>
+  </div>
+</div>
+
+
+<!-- ══ 02 ENEMY AI ══ -->
+<div class="sec"><span class="sec-id">// 02</span><div class="sec-bar"></div><span class="sec-name">Enemy AI — Components &amp; Blackboard Keys</span><div class="sec-bar"></div></div>
+<div class="note"><strong>Shared components</strong> live on BP_EnemyBase and are inherited by every enemy. <strong>Unique components</strong> are added only on the specific child BP that needs them. All Behavior Trees read/write only their own Blackboard — they never call other Blueprints directly.</div>
+<div class="card-grid">
+
+  <div class="card c-red">
+    <div class="card-type">Shared — all enemies</div>
+    <div class="card-name">AC_EnemyHealthComponent</div>
+    <div class="card-desc">Separate health + armour pools. Armour reaches 0 first before health takes full damage. Broadcasts OnArmourBroken and OnDeath so the AI Controller can trigger BT state changes.</div>
+    <ul class="card-vars">
+      <li>float MaxHealth, CurrentHealth <span class="vt">float</span></li>
+      <li>float MaxArmour, CurrentArmour <span class="vt">float</span></li>
+      <li>bool bArmourBroken <span class="vt">bool</span></li>
+      <li>Event OnArmourBroken <span class="vt">delegate</span></li>
+      <li>Event OnDeath (Killer) <span class="vt">delegate</span></li>
+      <li>Func TakeDamage (FS_DamageInfo) <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-red">
+    <div class="card-type">Shared — all enemies</div>
+    <div class="card-name">AC_WeakPointComponent</div>
+    <div class="card-desc">Manages N collision volumes parented to enemy sockets. Confirms a WP hit on overlap+damage. Calls BPI_Rageable::NotifyWeakPointHit on the player to feed rage — the component doesn't know anything else about the player.</div>
+    <ul class="card-vars">
+      <li>Array&lt;BP_WeakPointActor&gt; WeakPoints <span class="vt">array</span></li>
+      <li>Array&lt;bool&gt; bWPExposed <span class="vt">array</span></li>
+      <li>int ActiveWPCount <span class="vt">int</span></li>
+      <li>float RageAmountPerHit <span class="vt">float</span></li>
+      <li>Event OnWeakPointHit (Index, Damage) <span class="vt">delegate</span></li>
+      <li>Func GetExposedCount () → int <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-orange">
+    <div class="card-type">Shared — all stun-capable enemies</div>
+    <div class="card-name">AC_StunComponent</div>
+    <div class="card-desc">Accumulates stun damage from sustained fire. When the threshold (from DA_EnemyData) is crossed, sets bIsStunned and starts recovery timer. BTD_IsStunned decorator pauses the Behavior Tree during stun.</div>
+    <ul class="card-vars">
+      <li>float StunAccumulator <span class="vt">float</span></li>
+      <li>float StunThreshold (from DA_EnemyData) <span class="vt">float</span></li>
+      <li>float StunDuration <span class="vt">float</span></li>
+      <li>bool bIsStunned <span class="vt">bool</span></li>
+      <li>Event OnStunBegin, OnStunEnd <span class="vt">delegate</span></li>
+      <li>Func AddStunDamage (float Amount) <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-blue">
+    <div class="card-type">Shared — all enemies (UE Native)</div>
+    <div class="card-name">AIPerceptionComponent</div>
+    <div class="card-desc">Configured on BP_EnemyBase. Sight detects the player within radius and half-angle defined per enemy in DA_EnemyData. On detection, AIC_ writes the player reference to the Blackboard TargetActor key.</div>
+    <ul class="card-vars">
+      <li>UAISenseConfig_Sight SightConfig <span class="vt">UE native</span></li>
+      <li>UAISenseConfig_Hearing HearingConfig <span class="vt">UE native</span></li>
+      <li>float SightRadius (per DA_EnemyData row) <span class="vt">float</span></li>
+      <li>float LoseSightRadius <span class="vt">float</span></li>
+      <li>Event OnPerceptionUpdated → AIC_ writes BB <span class="vt">delegate</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-yellow">
+    <div class="card-type">Brute — BB_Brute keys</div>
+    <div class="card-name">Blackboard Keys</div>
+    <div class="card-desc">All runtime AI state for the Brute. BT tasks read and write these — no direct Blueprint calls to any external system.</div>
+    <ul class="card-vars">
+      <li>TargetActor <span class="vt">Object (AActor)</span></li>
+      <li>TargetLocation <span class="vt">Vector</span></li>
+      <li>bHasLOS <span class="vt">Bool</span></li>
+      <li>bIsStunned <span class="vt">Bool</span></li>
+      <li>bArmourBroken <span class="vt">Bool</span></li>
+      <li>AttackCooldownReady <span class="vt">Bool</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-yellow">
+    <div class="card-type">Flying Eye — BB_FlyingEye keys</div>
+    <div class="card-name">Blackboard Keys</div>
+    <div class="card-desc">bEyeDestroyed is set by AC_WeakPointComponent when WP index 0 (the eye) is confirmed hit — movement tasks check this flag to stop strafing.</div>
+    <ul class="card-vars">
+      <li>TargetActor <span class="vt">Object (AActor)</span></li>
+      <li>StrafeDestination <span class="vt">Vector (EQS result)</span></li>
+      <li>bHasLOS <span class="vt">Bool</span></li>
+      <li>bEyeDestroyed <span class="vt">Bool</span></li>
+      <li>bImmobilised <span class="vt">Bool</span></li>
+      <li>FireCooldownReady <span class="vt">Bool</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-yellow">
+    <div class="card-type">Spawner — BB_Spawner keys</div>
+    <div class="card-name">Blackboard Keys</div>
+    <div class="card-desc">RetreatDestination is populated by EQS_Spawner_Retreat. SpawnBudget is managed by AC_SpawnDirectorComponent — decremented on spawn, incremented on fodder death.</div>
+    <ul class="card-vars">
+      <li>TargetActor <span class="vt">Object (AActor)</span></li>
+      <li>RetreatDestination <span class="vt">Vector (EQS result)</span></li>
+      <li>SpawnBudget <span class="vt">Int</span></li>
+      <li>bCanSpawn <span class="vt">Bool</span></li>
+      <li>bIsRetreating <span class="vt">Bool</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-purple">
+    <div class="card-type">Spawner only — unique component</div>
+    <div class="card-name">AC_SpawnDirectorComponent</div>
+    <div class="card-desc">Manages a spawn budget to prevent infinite fodder. Decrements on spawn; refills when fodder dies via binding to OnDeath delegate. Writes bCanSpawn to Blackboard.</div>
+    <ul class="card-vars">
+      <li>int MaxSpawnBudget, CurrentBudget <span class="vt">int</span></li>
+      <li>float SpawnInterval <span class="vt">float</span></li>
+      <li>TArray SpawnPointRefs <span class="vt">array</span></li>
+      <li>Func TrySpawnFodder () <span class="vt">callable</span></li>
+      <li>Func OnFodderDied () <span class="vt">bound to OnDeath</span></li>
+    </ul>
+  </div>
+
+</div>
+
+
+<!-- ══ 03 PLAYER COMPONENTS ══ -->
+<div class="sec"><span class="sec-id">// 03</span><div class="sec-bar"></div><span class="sec-name">Player Actor Components</span><div class="sec-bar"></div></div>
+<div class="card-grid">
+
+  <div class="card c-red">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_HealthComponent</div>
+    <div class="card-desc">Single source of truth for player HP. Broadcasts events; never calls other systems directly.</div>
+    <ul class="card-vars">
+      <li>float CurrentHealth, MaxHealth <span class="vt">float</span></li>
+      <li>bool bIsInvincible <span class="vt">bool</span></li>
+      <li>Event OnDamageTaken (Amount) <span class="vt">delegate</span></li>
+      <li>Event OnDeath <span class="vt">delegate</span></li>
+      <li>Func TakeDamage (FS_DamageInfo) <span class="vt">callable</span></li>
+      <li>Func Heal (float Amount) <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-red">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_RageComponent</div>
+    <div class="card-desc">Owns the Rage meter. On meter full, starts Enraged State and broadcasts to all listeners. Timer fires OnEnragedStateEnd — all listeners revert state independently.</div>
+    <ul class="card-vars">
+      <li>float RageCurrent, RageMax <span class="vt">float</span></li>
+      <li>float EnragedDuration (1.5s default) <span class="vt">float</span></li>
+      <li>bool bIsEnraged <span class="vt">bool</span></li>
+      <li>Event OnEnragedStateBegin <span class="vt">delegate</span></li>
+      <li>Event OnEnragedStateEnd <span class="vt">delegate</span></li>
+      <li>Func AddRage (float), ConsumeRage () <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-teal">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_WeaponComponent</div>
+    <div class="card-desc">Manages three-slot inventory. Weapons are ChildActorComponents. Delegates Fire() to active slot. Holds bNextShotBoosted flag set by OnEnragedStateBegin.</div>
+    <ul class="card-vars">
+      <li>Array&lt;BP_WeaponBase&gt; WeaponSlots [3] <span class="vt">array</span></li>
+      <li>int ActiveWeaponIndex <span class="vt">int</span></li>
+      <li>bool bNextShotBoosted <span class="vt">bool</span></li>
+      <li>float NextShotMultiplier (3.0×) <span class="vt">float</span></li>
+      <li>Event OnWeaponSwitched, OnAmmoChanged <span class="vt">delegate</span></li>
+      <li>Func Fire (), SwitchWeapon (Index) <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-teal">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_MovementExtComponent</div>
+    <div class="card-desc">Extends CMC with grapple (always available) and rage-gated dash. Checks BPI_Rageable::IsEnraged() on owner — no direct reference to AC_RageComponent.</div>
+    <ul class="card-vars">
+      <li>BP_GrappleAnchor CurrentAnchor <span class="vt">soft ref</span></li>
+      <li>float GrappleSpeed, GrappleRange <span class="vt">float</span></li>
+      <li>float DashForce, DashDuration <span class="vt">float</span></li>
+      <li>bool bDashAvailable (rage-gated) <span class="vt">bool</span></li>
+      <li>Event OnGrappleAttached, OnDashUsed <span class="vt">delegate</span></li>
+      <li>Func TryGrapple (), TryDash (Direction) <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-blue">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_ParryComponent</div>
+    <div class="card-desc">Parry input, window timing, perfect parry detection. Window leniency widened by OnEnragedStateBegin event binding — decoupled from AC_RageComponent.</div>
+    <ul class="card-vars">
+      <li>float BaseParryWindow, CurrentParryWindow <span class="vt">float</span></li>
+      <li>bool bParryActive <span class="vt">bool</span></li>
+      <li>Func ActivateParry (), DeactivateParry () <span class="vt">callable</span></li>
+      <li>Func SetWindowLeniency (Multiplier) <span class="vt">callable</span></li>
+      <li>Event OnParrySuccess (bIsPerfect) <span class="vt">delegate</span></li>
+      <li>Event OnPerfectParry (DeflectedActor) <span class="vt">delegate</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-orange">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_UtilityComponent</div>
+    <div class="card-desc">Satchel Charge: throw, 2s fuse, detonation, radial shockwave. URadialForceComponent handles physics push internally. 45s cooldown gates re-throw.</div>
+    <ul class="card-vars">
+      <li>float Cooldown (45s), CooldownRemaining <span class="vt">float</span></li>
+      <li>float DetonationDelay (2s) <span class="vt">float</span></li>
+      <li>float ShockwaveRadius, ShockwaveForce <span class="vt">float</span></li>
+      <li>bool bCanThrow <span class="vt">bool</span></li>
+      <li>Event OnSatchelThrown, OnDetonated, OnCooldownComplete <span class="vt">delegate</span></li>
+      <li>Func ThrowSatchel (Dir), DetonateSatchel () <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-purple">
+    <div class="card-type">ActorComponent — Player</div>
+    <div class="card-name">AC_SkillSlotComponent</div>
+    <div class="card-desc">Registry and executor for the Special Skill slot. Holds a soft ref to equipped DA_SkillData. EquipSkill() is the only entry point for swapping — called from BP_SavePoint interaction. Persists selection via BP_Save_Anomaly.</div>
+    <ul class="card-vars">
+      <li>DA_SkillData EquippedSkill <span class="vt">soft ref</span></li>
+      <li>TArray&lt;DA_SkillData&gt; UnlockedSkills <span class="vt">array</span></li>
+      <li>bool bSkillAvailable (rage-gated) <span class="vt">bool</span></li>
+      <li>Event OnSkillEquipped, OnSkillActivated <span class="vt">delegate</span></li>
+      <li>Func ActivateSkill (), EquipSkill (DA_SkillData) <span class="vt">callable</span></li>
+      <li>Func GetAvailableSkills () → Array <span class="vt">callable</span></li>
+    </ul>
+  </div>
+
+</div>
+
+
+<!-- ══ 04 INTERFACES ══ -->
+<div class="sec"><span class="sec-id">// 04</span><div class="sec-bar"></div><span class="sec-name">Blueprint Interfaces</span><div class="sec-bar"></div></div>
+<div class="note"><strong>Rule:</strong> No system holds a direct typed reference to another system's class. All cross-actor calls go through an interface. Any implementor can be replaced or removed without touching the caller.</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--red)"><div class="dot" style="background:var(--red)"></div>BPI_Damageable — Player, all enemies</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">ReceiveDamage</td><td class="td-p">FS_DamageInfo</td><td class="td-d">Universal damage entry. Struct carries amount, type, WP flag, armour flag, instigator.</td></tr>
+  <tr><td class="td-fn">IsAlive</td><td class="td-p">→ bool</td><td class="td-d">Safe liveness check before applying logic</td></tr>
+  <tr><td class="td-fn">GetCurrentHealth</td><td class="td-p">→ float</td><td class="td-d">Read-only query for UI and AI</td></tr></table>
+</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--red)"><div class="dot" style="background:var(--red)"></div>BPI_WeakPointTarget — All enemies with weak points</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">RegisterWeakPointHit</td><td class="td-p">int Index, float Damage</td><td class="td-d">Called by AC_WeakPointComponent on confirmed hit</td></tr>
+  <tr><td class="td-fn">GetWeakPointCount</td><td class="td-p">→ int</td><td class="td-d">Queried by UI and arena manager</td></tr>
+  <tr><td class="td-fn">IsWeakPointExposed</td><td class="td-p">int Index → bool</td><td class="td-d">Checks if armour stripped from this WP (Brute)</td></tr></table>
+</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--teal)"><div class="dot" style="background:var(--teal)"></div>BPI_Rageable — Player only</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">IsEnraged</td><td class="td-p">→ bool</td><td class="td-d">Polled by AC_MovementExtComponent and AC_SkillSlotComponent to gate abilities</td></tr>
+  <tr><td class="td-fn">GetRagePercent</td><td class="td-p">→ float 0–1</td><td class="td-d">WBP_RageMeter UI binding</td></tr>
+  <tr><td class="td-fn">NotifyWeakPointHit</td><td class="td-p">float RageAmount</td><td class="td-d">Weapons feed rage without touching AC_RageComponent directly</td></tr></table>
+</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--blue)"><div class="dot" style="background:var(--blue)"></div>BPI_Parryable — BP_Projectile_Base children</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">CanBeParried</td><td class="td-p">→ bool</td><td class="td-d">Projectile reports if currently in parry-eligible (highlighted) state</td></tr>
+  <tr><td class="td-fn">OnParried</td><td class="td-p">APawn* ParryingPawn</td><td class="td-d">Projectile handles redirection or destruction</td></tr>
+  <tr><td class="td-fn">OnPerfectParried</td><td class="td-p">APawn* ParryingPawn</td><td class="td-d">Triggers stagger on source enemy via AC_StunComponent</td></tr></table>
+</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--orange)"><div class="dot" style="background:var(--orange)"></div>BPI_Interactable — BP_SavePoint, future interactables</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">Interact</td><td class="td-p">APawn* Interactor</td><td class="td-d">SavePoint opens Skill menu + saves; future objects do their own thing</td></tr>
+  <tr><td class="td-fn">GetInteractPrompt</td><td class="td-p">→ FText</td><td class="td-d">Localisation-safe prompt string for WBP_HUD</td></tr>
+  <tr><td class="td-fn">CanInteract</td><td class="td-p">APawn* → bool</td><td class="td-d">Gate — e.g. disallow skill swap mid-combat</td></tr></table>
+</div>
+
+<div class="itbl-wrap">
+  <div class="itbl-head" style="color:var(--purple)"><div class="dot" style="background:var(--purple)"></div>BPI_SkillEquippable — BP_SkillBase children</div>
+  <table class="itbl"><tr><th>Function</th><th>Parameters</th><th>Purpose</th></tr>
+  <tr><td class="td-fn">Execute</td><td class="td-p">APawn* Instigator</td><td class="td-d">Triggers effect — called by AC_SkillSlotComponent only</td></tr>
+  <tr><td class="td-fn">GetSkillData</td><td class="td-p">→ DA_SkillData</td><td class="td-d">Returns Data Asset for WBP_SkillSelectMenu display</td></tr>
+  <tr><td class="td-fn">IsReadyToUse</td><td class="td-p">→ bool</td><td class="td-d">Per-skill cooldown check (future skills may have own cooldowns)</td></tr></table>
+</div>
+
+
+
+<!-- ══ ANIMATION PIPELINE ══ -->
+<div class="sec"><span class="sec-id">// 03</span><div class="sec-bar"></div><span class="sec-name">Animation Pipeline</span><div class="sec-bar"></div></div>
+<div class="note">Every character and enemy needs its own Anim Blueprint, at minimum one Blend Space for locomotion, montages for actions, and Anim Notifies to fire events at specific frames. The ABP_ is the only place where animation state lives — Blueprints never manually set animation poses.</div>
+
+<div class="card-grid">
+
+  <div class="card c-blue">
+    <div class="card-type">Anim Blueprint — Player</div>
+    <div class="card-name">ABP_Player</div>
+    <div class="card-desc">Controls the player's animation state machine. Reads speed, direction, bIsGrounded, bIsGrappling from the Character Movement Component each tick and drives the blend space. Montages layer on top for actions.</div>
+    <ul class="card-vars">
+      <li>float Speed ← CharacterMovement.Velocity.Size <span class="vt">float</span></li>
+      <li>float Direction ← Calculate Direction() <span class="vt">float</span></li>
+      <li>bool bIsGrounded ← CharacterMovement.IsMovingOnGround <span class="vt">bool</span></li>
+      <li>bool bIsGrappling ← AC_MovementExtComponent.bGrappling <span class="vt">bool</span></li>
+      <li>bool bIsEnraged ← BPI_Rageable.IsEnraged on Owner <span class="vt">bool</span></li>
+      <li>BS_Player_Locomotion — primary state machine blend <span class="vt">blend space</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-blue">
+    <div class="card-type">Anim Blueprint — Per Enemy</div>
+    <div class="card-name">ABP_[Enemy] (one per enemy type)</div>
+    <div class="card-desc">Each enemy has its own ABP_ reading from its own variables. The ABP_ never reads from Blueprint components directly — the AIC_ or the enemy BP pushes state flags into variables the ABP_ can read safely.</div>
+    <ul class="card-vars">
+      <li>float Speed ← CharacterMovement.Velocity.Size <span class="vt">float</span></li>
+      <li>bool bIsStunned ← set by AIC_ when BB bIsStunned changes <span class="vt">bool</span></li>
+      <li>bool bIsDead ← set by AC_EnemyHealthComponent.OnDeath <span class="vt">bool</span></li>
+      <li>BS_[Enemy]_Locomotion — idle/walk/run blend <span class="vt">blend space</span></li>
+      <li>Slot "DefaultSlot" — montages play into this slot <span class="vt">slot</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-teal">
+    <div class="card-type">Anim Notify — Point Event</div>
+    <div class="card-name">AN_[Enemy]_AttackHit</div>
+    <div class="card-desc">A point-in-time notify placed on the attack montage at the exact frame the weapon makes contact. BTT_AttackMelee binds to On Notify and applies damage only at this moment — not at the start of the swing.</div>
+    <ul class="card-vars">
+      <li>Placed on AM_[Enemy]_Attack at impact frame <span class="vt">placement</span></li>
+      <li>BTT_AttackMelee binds to OnPlayMontageNotifyBegin <span class="vt">binding</span></li>
+      <li>Notify Name must match exactly in task BP <span class="vt">string match</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-teal">
+    <div class="card-type">Anim Notify State — Duration Window</div>
+    <div class="card-name">ANS_[Enemy]_AttackWindow</div>
+    <div class="card-desc">A duration-based notify marking the full window of an attack during which the player could theoretically parry. The parry system checks whether this window is active on the projectile's source enemy. Different from AN_ — has Begin and End events.</div>
+    <ul class="card-vars">
+      <li>Placed on AM_[Enemy]_Attack spanning wind-up to impact <span class="vt">placement</span></li>
+      <li>NotifyBegin → sets bAttackWindowOpen=true on enemy <span class="vt">event</span></li>
+      <li>NotifyEnd → sets bAttackWindowOpen=false <span class="vt">event</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-orange">
+    <div class="card-type">Blend Space</div>
+    <div class="card-name">BS_[Character]_Locomotion</div>
+    <div class="card-desc">A 2D blend space with Speed on the X axis (0=idle, 600=run) and Direction on the Y axis (-180 to 180 for strafing). The ABP_ drives this every tick. Each character has its own with appropriate animation sets.</div>
+    <ul class="card-vars">
+      <li>Axis X: Speed (0–600) <span class="vt">float axis</span></li>
+      <li>Axis Y: Direction (-180 to 180) <span class="vt">float axis</span></li>
+      <li>Samples: Idle, WalkFwd, WalkBwd, WalkL, WalkR, RunFwd <span class="vt">anim samples</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-orange">
+    <div class="card-type">IK Rig + IK Retargeter</div>
+    <div class="card-name">IKR_Player / IKRT_EnemyToPlayer</div>
+    <div class="card-desc">IK Rig defines the solver chains (foot IK, hand IK on weapon grip) for the player skeleton. IK Retargeter maps animations from one skeleton to another — used if enemies share a base rig with the player or if purchased animations need remapping.</div>
+    <ul class="card-vars">
+      <li>IKR_Player — foot IK chains, hand IK for weapon <span class="vt">IK Rig</span></li>
+      <li>IKRT_EnemyToPlayer — remap enemy anims to player rig <span class="vt">IK Retargeter</span></li>
+      <li>Foot IK in ABP_: Two Bone IK node per leg <span class="vt">ABP node</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ FOOTSTEP SYSTEM ══ -->
+<div class="sec"><span class="sec-id">// 04</span><div class="sec-bar"></div><span class="sec-name">Footstep System</span><div class="sec-bar"></div></div>
+<div class="note">Footsteps are driven by Anim Notifies in the locomotion animations, not by timers. The notify fires a line trace downward at the foot bone, reads the physical material, and picks the correct sound from DT_FootstepSurfaces. This applies to both the player and enemies.</div>
+
+<div class="card-grid">
+
+  <div class="card c-teal">
+    <div class="card-type">Anim Notify — Footstep</div>
+    <div class="card-name">AN_Player_FootstepL / AN_Player_FootstepR</div>
+    <div class="card-desc">Placed on locomotion animations at the exact frame each foot strikes the ground. Fires a line trace from the foot bone downward to read the physical material, then plays the matching sound from DT_FootstepSurfaces and spawns NS_Footstep_Dust.</div>
+    <ul class="card-vars">
+      <li>Line Trace from foot bone → 20 units down <span class="vt">trace</span></li>
+      <li>Hit Physical Material → row lookup in DT_FootstepSurfaces <span class="vt">data lookup</span></li>
+      <li>Play Sound at Location ← matched SC_ asset <span class="vt">audio</span></li>
+      <li>Spawn NS_Footstep_Dust at hit location <span class="vt">VFX</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-orange">
+    <div class="card-type">DataTable</div>
+    <div class="card-name">DT_FootstepSurfaces</div>
+    <div class="card-desc">Maps physical surface types to footstep sound cues. Adding a new surface type (e.g. metal grating) means adding one row — no notify changes needed. Physical Materials must be assigned to level geometry for this to work.</div>
+    <ul class="card-vars">
+      <li>Column: SurfaceType (EPhysicalSurface enum) <span class="vt">enum</span></li>
+      <li>Column: FootstepSound (SC_ soft ref) <span class="vt">soft ref</span></li>
+      <li>Column: FootstepVFX (NS_ soft ref, optional) <span class="vt">soft ref</span></li>
+      <li>Rows: Default, Metal, Concrete, Gravel, Water <span class="vt">rows</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ HIT REACTION + DEATH RAGDOLL ══ -->
+<div class="sec"><span class="sec-id">// 05</span><div class="sec-bar"></div><span class="sec-name">Hit Reactions + Death Ragdoll</span><div class="sec-bar"></div></div>
+<div class="note">Hit reactions are short montages that interrupt the current animation when an enemy takes significant damage. Death transitions the enemy from animation to physics ragdoll. Both are triggered from AC_EnemyHealthComponent events.</div>
+
+<div class="card-grid">
+
+  <div class="card c-red">
+    <div class="card-type">System — Hit Reaction</div>
+    <div class="card-name">AM_[Enemy]_HitReact (directional variants)</div>
+    <div class="card-desc">Short (~0.3s) interrupt montages played when an enemy takes a hit. Directional variants (Front, Back, Left, Right) are chosen by calculating the hit direction relative to the enemy's forward vector. Triggered from AC_EnemyHealthComponent.OnDamageTaken.</div>
+    <ul class="card-vars">
+      <li>AM_[Enemy]_HitReact_Front/Back/Left/Right <span class="vt">montages</span></li>
+      <li>Triggered by: AC_EnemyHealthComponent.OnDamageTaken <span class="vt">trigger</span></li>
+      <li>Direction calc: Dot(HitDir, EnemyForward) → choose montage <span class="vt">logic</span></li>
+      <li>Blend In: 0.1s — quick interrupt, Blend Out: 0.2s <span class="vt">blend settings</span></li>
+      <li>Montage Section: overrides locomotion briefly then blends back <span class="vt">slot</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-red">
+    <div class="card-type">System — Death Ragdoll</div>
+    <div class="card-name">PHYS_[Enemy] + Death transition</div>
+    <div class="card-desc">On OnDeath, the enemy plays AM_[Enemy]_Death briefly then transitions to physics simulation. The PHYS_ asset defines which bones are simulated. The capsule collision is disabled so the corpse doesn't block movement.</div>
+    <ul class="card-vars">
+      <li>Trigger: AC_EnemyHealthComponent.OnDeath → delay 0.2s <span class="vt">trigger</span></li>
+      <li>Set All Bodies Simulate Physics = true on SK Mesh <span class="vt">node</span></li>
+      <li>Set Collision Profile = Ragdoll on SK Mesh <span class="vt">node</span></li>
+      <li>Capsule: Set Collision Enabled = No Collision <span class="vt">node</span></li>
+      <li>Apply Last Velocity impulse to ragdoll root <span class="vt">node</span></li>
+      <li>Dissolve via MF_Dissolve after 5s → Destroy Actor <span class="vt">cleanup</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ POST PROCESS + RENDERING ══ -->
+<div class="sec"><span class="sec-id">// 06</span><div class="sec-bar"></div><span class="sec-name">Post Process + Rendering</span><div class="sec-bar"></div></div>
+<div class="note">Post Process effects are driven by a Post Process Volume placed in each level, with material parameters animated at runtime. The Enrage effect and hit flash are both post process materials triggered from the rage/damage event systems.</div>
+
+<div class="card-grid">
+
+  <div class="card c-purple">
+    <div class="card-type">Post Process Material</div>
+    <div class="card-name">PP_Enrage</div>
+    <div class="card-desc">Full-screen colour shift during Enraged State. A scalar parameter "EnrageIntensity" is animated from 0→1 on OnEnragedStateBegin and back to 0 on OnEnragedStateEnd using a Timeline in BP_PlayerCharacter. Add this material to the Post Process Volume's Materials array.</div>
+    <ul class="card-vars">
+      <li>Scalar param: EnrageIntensity (0–1) <span class="vt">parameter</span></li>
+      <li>Effect: red vignette + slight desaturation of world <span class="vt">visual</span></li>
+      <li>Driven by: Timeline in BP_PlayerCharacter rage bindings <span class="vt">driver</span></li>
+      <li>Set Scalar Parameter Value on PostProcessComponent <span class="vt">node</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-purple">
+    <div class="card-type">Post Process Material</div>
+    <div class="card-name">PP_HitFlash</div>
+    <div class="card-desc">Brief white flash on player taking damage. Driven by a short curve in a Timeline triggered from AC_HealthComponent.OnDamageTaken binding in BP_PlayerCharacter. Intensity spikes to 1.0 then falls to 0 over 0.15s.</div>
+    <ul class="card-vars">
+      <li>Scalar param: HitFlashIntensity (0–1) <span class="vt">parameter</span></li>
+      <li>Duration: 0.15s curve — spike then decay <span class="vt">timing</span></li>
+      <li>Driven by: OnDamage_HitFlash Custom Event in BP_PlayerCharacter <span class="vt">driver</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-purple">
+    <div class="card-type">World Actor — Per Level</div>
+    <div class="card-name">PostProcessVolume (placed in level)</div>
+    <div class="card-desc">One Post Process Volume set to Infinite Extent covers the whole level. Holds base colour grading, bloom, ambient occlusion, and the PP_ material slots. Only one PPV needed unless different zones need different looks.</div>
+    <ul class="card-vars">
+      <li>Infinite Extent (Unbound): true <span class="vt">setting</span></li>
+      <li>Materials array: PP_Enrage, PP_HitFlash <span class="vt">materials</span></li>
+      <li>Bloom: Intensity=0.5, Threshold=-1 <span class="vt">bloom</span></li>
+      <li>Ambient Occlusion: Intensity=0.5, Radius=20 <span class="vt">AO</span></li>
+      <li>Color Grading: LUT assigned per act/location <span class="vt">LUT</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ INPUT SYSTEM ══ -->
+<div class="sec"><span class="sec-id">// 07</span><div class="sec-bar"></div><span class="sec-name">Enhanced Input System</span><div class="sec-bar"></div></div>
+<div class="note">UE5 uses Enhanced Input. Every action is an IA_ asset. The IMC_ binds IA_ assets to hardware keys. This decouples actions from keys completely — remapping controls means editing IMC_ only, no Blueprint changes.</div>
+
+<div class="card-grid">
+
+  <div class="card c-blue">
+    <div class="card-type">Input Mapping Context</div>
+    <div class="card-name">IMC_Default</div>
+    <div class="card-desc">The only IMC needed for standard gameplay. Added to the player's Enhanced Input subsystem in BP_PlayerController BeginPlay via Add Mapping Context. Contains all key-to-action bindings for keyboard/mouse and gamepad.</div>
+    <ul class="card-vars">
+      <li>IA_Fire → Left Mouse Button / RT <span class="vt">binding</span></li>
+      <li>IA_Parry → Right Mouse Button / LT <span class="vt">binding</span></li>
+      <li>IA_Grapple → E / RB <span class="vt">binding</span></li>
+      <li>IA_Dash → Shift / B <span class="vt">binding</span></li>
+      <li>IA_Utility → Q / LB <span class="vt">binding</span></li>
+      <li>IA_Skill → F / Y <span class="vt">binding</span></li>
+      <li>IA_WeaponWheel → Tab / Left Stick Click (hold) <span class="vt">binding</span></li>
+      <li>IA_Move → WASD / Left Stick Axis <span class="vt">binding</span></li>
+      <li>IA_Look → Mouse XY / Right Stick Axis <span class="vt">binding</span></li>
+      <li>IA_Jump → Space / Face Button Bottom <span class="vt">binding</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-blue">
+    <div class="card-type">Setup Note</div>
+    <div class="card-name">Registering IMC_ in BP_PlayerController</div>
+    <div class="card-desc">Add this to BP_PlayerController BeginPlay — without it, no Enhanced Input actions fire at all.</div>
+    <ul class="card-vars">
+      <li>Get Enhanced Input Subsystem (from PlayerController) <span class="vt">node</span></li>
+      <li>Add Mapping Context → IMC_Default, Priority=0 <span class="vt">node</span></li>
+      <li>Priority 0 = default gameplay context <span class="vt">note</span></li>
+      <li>Add a second IMC at Priority 1 for UI/menu states <span class="vt">tip</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ MISSING UI SCREENS ══ -->
+<div class="sec"><span class="sec-id">// 08</span><div class="sec-bar"></div><span class="sec-name">Missing UI Screens</span><div class="sec-bar"></div></div>
+<div class="note">WBP_PauseMenu, WBP_DeathScreen, and WBP_LoadingScreen complete the player-facing UI. These are created/destroyed by BP_PlayerController or the Game Mode — they are never open simultaneously.</div>
+
+<div class="card-grid">
+
+  <div class="card c-pink">
+    <div class="card-type">Widget Blueprint</div>
+    <div class="card-name">WBP_PauseMenu</div>
+    <div class="card-desc">Opened on Escape/Start. Sets game to paused state. Contains Resume, Settings (stub), and Quit buttons. Opened by BP_PlayerController at ZOrder=10 so it appears above all other UI.</div>
+    <ul class="card-vars">
+      <li>Input: IA_Pause → BP_PlayerController → Create/Remove widget <span class="vt">trigger</span></li>
+      <li>Set Game Paused = true on open <span class="vt">node</span></li>
+      <li>Set Input Mode UI Only on open <span class="vt">node</span></li>
+      <li>Resume button → Set Game Paused=false, remove widget, restore game input <span class="vt">button</span></li>
+      <li>Quit button → Quit Game node <span class="vt">button</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-pink">
+    <div class="card-type">Widget Blueprint</div>
+    <div class="card-name">WBP_DeathScreen</div>
+    <div class="card-desc">Shown on AC_HealthComponent.OnDeath in BP_PlayerCharacter. After a 2s delay (death animation plays), fades in. Offers Respawn (reload level) and Main Menu. Prevents input to the character while visible.</div>
+    <ul class="card-vars">
+      <li>Trigger: AC_HealthComponent.OnDeath → 2s timer → show widget <span class="vt">trigger</span></li>
+      <li>Fade in via UMG animation on construct <span class="vt">animation</span></li>
+      <li>Respawn button → Open Level (current level name) <span class="vt">button</span></li>
+      <li>Main Menu button → Open Level "L_MainMenu" <span class="vt">button</span></li>
+    </ul>
+  </div>
+
+  <div class="card c-pink">
+    <div class="card-type">Widget Blueprint</div>
+    <div class="card-name">WBP_LoadingScreen</div>
+    <div class="card-desc">Shown during level transitions. Created just before Open Level is called and removed after the new level's BeginPlay fires. Contains a looping animation or tip text. BP_GI_Anomaly creates and owns this since it persists across levels.</div>
+    <ul class="card-vars">
+      <li>Created by BP_GI_Anomaly before any Open Level call <span class="vt">owner</span></li>
+      <li>Removed in the new level's BP_GM_Anomaly BeginPlay <span class="vt">removal</span></li>
+      <li>Looping spinner or progress hint animation <span class="vt">content</span></li>
+    </ul>
+  </div>
+
+</div>
+<!-- ══ 09 SCALABILITY RULES ══ -->
+<div class="sec"><span class="sec-id">// 09</span><div class="sec-bar"></div><span class="sec-name">Scalability Rules for Future GDD Changes</span><div class="sec-bar"></div></div>
+<div class="rules">
+  <div class="rule"><div class="rule-sym">+W</div><div class="rule-body"><strong>Adding a new weapon</strong><p>Create a child BP of <code>BP_WeaponBase</code>. Add one row to <code>DT_Weapons</code>. Override <code>Fire()</code> for unique behaviour. Zero changes to existing Blueprints.</p></div></div>
+  <div class="rule"><div class="rule-sym">+S</div><div class="rule-body"><strong>Adding a new Special Skill</strong><p>Create a child BP of <code>BP_SkillBase</code>, implement <code>BPI_SkillEquippable::Execute()</code>. Add a row to <code>DT_Skills</code>. Auto-appears in <code>WBP_SkillSelectMenu</code> — no UI code changes.</p></div></div>
+  <div class="rule"><div class="rule-sym">+E</div><div class="rule-body"><strong>Adding a new enemy type</strong><p>Child BP of <code>BP_EnemyBase</code> + row in <code>DT_Enemies</code> + new <code>BT_</code>, <code>BB_</code>, and <code>AIC_</code>. Add unique components as needed. Nothing else changes.</p></div></div>
+  <div class="rule"><div class="rule-sym">+M</div><div class="rule-body"><strong>Adding a new movement ability</strong><p>Add a function to <code>AC_MovementExtComponent</code>. Gate with <code>BPI_Rageable::IsEnraged()</code> if needed. Bind input in <code>BP_PlayerController</code>. No existing movement code touched.</p></div></div>
+  <div class="rule"><div class="rule-sym">≠</div><div class="rule-body"><strong>Changing any tunable value</strong><p>Edit only the relevant <code>DT_</code> row. Covers weapon damage, rage meter size, enraged duration, satchel cooldown, parry windows, enemy health, armour, stun thresholds — no Blueprint graphs opened.</p></div></div>
+  <div class="rule"><div class="rule-sym">∅</div><div class="rule-body"><strong>Removing a system entirely</strong><p>Interface/event-driven design means removing e.g. <code>AC_ParryComponent</code> + <code>BPI_Parryable</code> leaves no dangling hard references in any other Blueprint.</p></div></div>
+</div>
+
+
+<!-- ══ 10 PHASES ══ -->
+<div class="sec"><span class="sec-id">// 10</span><div class="sec-bar"></div><span class="sec-name">Implementation Phases</span><div class="sec-bar"></div></div>
+
+<div class="phase ph1">
+  <div class="phase-num">Phase 01</div>
+  <div class="phase-body">
+    <h4>Foundation — Core Combat Loop</h4>
+    <p>Get the damage → weak point → rage loop playable with placeholder assets. Every later system depends on these being solid.</p>
+    <div class="chips">
+      <span class="chip">BP_PlayerCharacter</span><span class="chip">BP_PlayerController</span>
+      <span class="chip">AC_HealthComponent</span><span class="chip">AC_RageComponent</span>
+      <span class="chip">AC_WeaponComponent</span><span class="chip">BP_WeaponBase</span>
+      <span class="chip">BP_Weapon_Pistol</span><span class="chip">BP_Weapon_Shotgun</span><span class="chip">BP_Weapon_AssaultRifle</span>
+      <span class="chip">BP_EnemyBase</span><span class="chip">AC_EnemyHealthComponent</span><span class="chip">AC_WeakPointComponent</span>
+      <span class="chip">BPI_Damageable</span><span class="chip">BPI_WeakPointTarget</span><span class="chip">BPI_Rageable</span>
+      <span class="chip">FS_DamageInfo</span><span class="chip">DT_Weapons</span><span class="chip">DT_Enemies</span>
+      <span class="chip">WBP_HUD (placeholder)</span>
+    </div>
+  </div>
+</div>
+
+<div class="phase ph2">
+  <div class="phase-num">Phase 02</div>
+  <div class="phase-body">
+    <h4>Combat Depth — Movement, Parry, Utility &amp; Full Enemy AI</h4>
+    <p>Layer in skill-expression systems and bring all five enemy types online with Behavior Trees.</p>
+    <div class="chips">
+      <span class="chip">AC_MovementExtComponent</span><span class="chip">BP_GrappleAnchor</span>
+      <span class="chip">AC_ParryComponent</span><span class="chip">BP_ParryWindow</span><span class="chip">BPI_Parryable</span>
+      <span class="chip">AC_UtilityComponent</span><span class="chip">BP_SatchelCharge</span>
+      <span class="chip">AC_StunComponent</span><span class="chip">AIPerceptionComponent</span>
+      <span class="chip">BP_Enemy_Brute + BT_/BB_/AIC_</span>
+      <span class="chip">BP_Enemy_FlyingEye + BT_/BB_/AIC_/EQS_</span>
+      <span class="chip">BP_Enemy_Spawner + AC_SpawnDirectorComponent + BT_/BB_</span>
+      <span class="chip">BP_Enemy_FodderMelee + BT_Fodder_Melee</span>
+      <span class="chip">BP_Enemy_FodderRanged + BT_Fodder_Ranged</span>
+      <span class="chip">All Shared_AI/ BTT_ / BTS_ / BTD_ nodes</span>
+      <span class="chip">BP_Projectile_Enemy</span>
+      <span class="chip">All 4 Enraged State abilities</span>
+    </div>
+  </div>
+</div>
+
+<div class="phase ph3">
+  <div class="phase-num">Phase 03</div>
+  <div class="phase-body">
+    <h4>Skill Slot, Save System &amp; Full UI</h4>
+    <p>Special Skill system, save points, and polished HUD. All registries are open — future skills and interactables drop straight in.</p>
+    <div class="chips">
+      <span class="chip">AC_SkillSlotComponent</span><span class="chip">BP_SkillBase</span><span class="chip">BP_Skill_[Initial Skills]</span>
+      <span class="chip">DT_Skills</span><span class="chip">DA_SkillData</span>
+      <span class="chip">BP_SavePoint</span><span class="chip">BPI_Interactable</span>
+      <span class="chip">BP_Save_Anomaly</span><span class="chip">BP_GI_Anomaly</span>
+      <span class="chip">WBP_SkillSelectMenu</span><span class="chip">WBP_SkillSlotDisplay</span>
+      <span class="chip">BP_ArenaManager</span><span class="chip">DT_ArenaWaves</span>
+      <span class="chip">Full HUD — all WBP_ widgets</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  <div>Project Anomaly — UE5.4 Architecture v1.1</div>
+  <div>All values sourced from <span>GDD v1.1</span> — tunable via DataTables</div>
+</footer>
+
+</body>
+</html>

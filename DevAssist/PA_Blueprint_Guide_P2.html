@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Project Anomaly — Blueprint Guide Part 2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap');
+:root {
+  --bg:#07090d; --bg1:#0c0f15; --bg2:#10141c; --bg3:#151b25;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --red:#ff4757; --orange:#ff9f43; --teal:#1dd1a1; --blue:#54a0ff;
+  --purple:#a29bfe; --yellow:#ffd32a; --green:#2ed573; --pink:#fd79a8;
+  --text:#c8d0dc; --muted:#526070; --muted2:#8494a8;
+  --mono:'JetBrains Mono',monospace; --display:'Syne',sans-serif;
+  --path-bg: rgba(29,209,161,0.08);
+  --path-border: rgba(29,209,161,0.25);
+  --path-text: #6edacf;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.65;}
+.page{max-width:980px;margin:0 auto;padding:0 40px 100px;}
+
+/* ── PATH BADGE ── */
+.path-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 8px 0 18px;
+}
+.path-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--path-bg);
+  border: 1px solid var(--path-border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-family: var(--mono);
+  color: var(--path-text);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.path-icon { font-size: 11px; }
+.path-text { }
+.path-row-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+  font-family: var(--mono);
+}
+
+/* ── SECTION HEADER ── */
+.sec{display:flex;align-items:center;gap:14px;margin:52px 0 8px;page-break-before:always;}
+.sec:first-of-type{page-break-before:avoid;}
+.sec-id{font-size:10px;color:var(--teal);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
+.sec-bar{flex:1;height:1px;background:var(--border2);}
+.sec-name{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+
+/* ── COVER ── */
+header{padding:50px 40px 36px;border-bottom:1px solid var(--border2);position:relative;overflow:hidden;background:linear-gradient(135deg,#07090d 55%,#0d1420);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(29,209,161,0.06),transparent 70%);pointer-events:none;}
+.hd-kicker{font-size:10px;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:10px;}
+.hd-title{font-family:var(--display);font-size:36px;font-weight:800;line-height:1.05;margin-bottom:8px;letter-spacing:-1px;}
+.hd-title em{color:var(--teal);font-style:normal;}
+.hd-sub{font-size:12px;color:var(--muted2);max-width:640px;line-height:1.8;margin-bottom:20px;}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid;font-weight:500;}
+.tt{color:var(--teal);border-color:rgba(29,209,161,.25);background:rgba(29,209,161,.06);}
+.tb{color:var(--blue);border-color:rgba(84,160,255,.25);background:rgba(84,160,255,.06);}
+.to{color:var(--orange);border-color:rgba(255,159,67,.25);background:rgba(255,159,67,.06);}
+.tr{color:var(--red);border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.08);}
+
+/* ── CONTENT BLOCKS ── */
+.intro{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--teal);padding:16px 20px;border-radius:2px;margin-bottom:20px;font-size:12.5px;color:var(--muted2);line-height:1.8;}
+.intro strong{color:var(--text);}
+.step{margin-bottom:32px;page-break-inside:avoid;}
+.step-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.step-badge{font-family:var(--display);font-size:10px;font-weight:800;padding:3px 9px;border-radius:2px;letter-spacing:1px;flex-shrink:0;margin-top:2px;text-transform:uppercase;}
+.sb-red{background:var(--red);color:#fff;}
+.sb-blue{background:var(--blue);color:#07090d;}
+.sb-teal{background:var(--teal);color:#07090d;}
+.sb-orange{background:var(--orange);color:#07090d;}
+.sb-purple{background:var(--purple);color:#07090d;}
+.step-title{font-family:var(--display);font-size:15px;font-weight:700;line-height:1.3;}
+.step-body{font-size:12.5px;color:var(--muted2);line-height:1.75;margin-bottom:8px;}
+.step-body strong{color:var(--text);}
+.step-body p{margin-bottom:8px;}
+
+.callout{display:flex;gap:12px;padding:12px 16px;border-radius:2px;margin:12px 0;font-size:12px;line-height:1.7;}
+.callout.tip{background:rgba(29,209,161,.07);border:1px solid rgba(29,209,161,.2);}
+.callout.warn{background:rgba(255,159,67,.07);border:1px solid rgba(255,159,67,.2);}
+.callout.note{background:rgba(84,160,255,.07);border:1px solid rgba(84,160,255,.2);}
+.callout-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.callout-body{color:var(--muted2);}
+.callout-body strong{color:var(--text);}
+
+/* flow summary */
+.flow-summary{background:linear-gradient(135deg,rgba(29,209,161,0.06),rgba(84,160,255,0.04));border:1px solid rgba(29,209,161,.18);border-radius:3px;padding:16px 20px;margin-top:20px;}
+.flow-summary-title{font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.flow-summary-title::after{content:'';flex:1;height:1px;background:rgba(29,209,161,.2);}
+.flow-steps{list-style:none;counter-reset:fs;}
+.flow-steps li{counter-increment:fs;display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:var(--muted2);line-height:1.6;}
+.flow-steps li:last-child{border-bottom:none;}
+.flow-steps li::before{content:counter(fs);font-family:var(--display);font-size:10px;font-weight:800;background:var(--teal);color:#07090d;width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.flow-steps li strong{color:var(--text);}
+
+/* debug */
+.debug-block{background:linear-gradient(135deg,rgba(46,213,115,0.06),rgba(29,209,161,0.04));border:1px solid rgba(46,213,115,.2);border-radius:3px;padding:16px 20px;margin-top:12px;page-break-inside:avoid;}
+.debug-title{font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.debug-title::after{content:'';flex:1;height:1px;background:rgba(46,213,115,.2);}
+.debug-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.debug-col h5{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.debug-steps{list-style:none;}
+.debug-steps li{font-size:11.5px;color:var(--muted2);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;line-height:1.5;}
+.debug-steps li:last-child{border-bottom:none;}
+.debug-steps li::before{content:'▸';color:var(--green);flex-shrink:0;font-size:10px;margin-top:2px;}
+.debug-steps li strong{color:var(--text);}
+.debug-steps li code{font-family:var(--mono);font-size:10.5px;background:rgba(46,213,115,.1);color:var(--green);padding:1px 4px;border-radius:2px;}
+
+code{font-family:var(--mono);font-size:11px;background:rgba(84,160,255,.12);color:var(--blue);padding:1px 5px;border-radius:2px;}
+.var-table{width:100%;border-collapse:collapse;margin:10px 0;}
+.var-table th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border2);background:var(--bg1);}
+.var-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top;}
+.var-table tr:last-child td{border-bottom:none;}
+.pb{page-break-before:always;}
+.no-break{page-break-inside:avoid;}
+footer{margin-top:80px;padding:20px 40px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+footer span{color:var(--teal);}
+</style>
+</head><body>
+
+<header>
+  <div class="hd-kicker">// Blueprint Implementation Guide — Part 2</div>
+  <div class="hd-title">PROJECT <em>ANOMALY</em></div>
+  <div class="hd-sub">12 sections: remaining structs/DataTables, Shotgun + AR, projectiles, skills, enemy child BPs, EQS, shared BT nodes, ArenaManager, Game Instance + save, camera, remaining HUD, DA_WeaponData. Each section now includes the exact Content Browser folder path where the asset must be created — shown in the teal badge directly below the section header.</div>
+  <div class="tag-row">
+    <span class="tag tt">Part 2</span>
+    <span class="tag tb">UE 5.4</span>
+    <span class="tag tt">Folder Paths Added</span>
+    <span class="tag tb">12 Sections</span>
+  </div>
+</header>
+<div class="page">
+
+<div class="sec" id="s01">
+  <span class="sec-id" style="color:var(--blue)">§01</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Remaining Structs + DataTables</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Data/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Data/Structs/</span></span></div>
+<div class="intro">All structs live in <strong>Data/Structs/</strong>. All DataTables live in <strong>Data/</strong>. These are pure data assets with no Blueprint graph — create them by right-clicking in the correct folder, picking the type, and filling in the rows.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">All FS_ structs in Data/Structs/</div></div>
+<div class="step-body"><p>Navigate to <strong>Data/Structs/</strong>. FS_WeaponRow: MaxAmmo (int), BaseDamage (float), ReloadTime (float), WeaponClass (soft class). FS_EnemyRow: EnemyClass (soft class), MaxHealth, MaxArmour (float), WeakPointCount (int), RagePerWeakPointHit (float), bCanBeStunned (bool), StunThreshold (float), bFiresProjectiles (bool), SightRadius (float). FS_SkillRow and FS_WaveRow: see TDD §Structs.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">All DataTables in Data/</div></div>
+<div class="step-body"><p>Navigate to <strong>Data/</strong>. Right-click → Miscellaneous → Data Table. DT_Weapons (FS_WeaponRow): rows Pistol, Shotgun, AssaultRifle. DT_Enemies (FS_EnemyRow): rows Brute, FlyingEye, Spawner, FodderMelee, FodderRanged. DT_Skills (FS_SkillRow): row BlastWave. DT_ArenaWaves (FS_WaveRow): 3 wave rows. Row names are case-sensitive strings — a typo causes a silent GetDataTableRow failure at runtime.</p></div></div>
+
+
+<div class="sec" id="s02">
+  <span class="sec-id" style="color:var(--orange)">§02</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_Weapon_Shotgun + BP_Weapon_AssaultRifle</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/AssaultRifle/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/Shotgun/</span></span></div>
+<div class="intro">BP_Weapon_Shotgun lives in <strong>Weapons/Shotgun/</strong>. BP_Weapon_AssaultRifle lives in <strong>Weapons/AssaultRifle/</strong>. Both are children of BP_WeaponBase (which lives in Weapons/Base/). Navigate to the correct subfolder before creating each child BP.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_Weapon_Shotgun in Weapons/Shotgun/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/Shotgun/</strong>. Blueprint Class → parent=BP_WeaponBase → <code>BP_Weapon_Shotgun</code>. Override Fire(): Branch ammo>0 → For Loop 0–7 (8 pellets) → Random Unit Vector In Cone (5°) → Line Trace By Channel → Branch bBlockingHit → BPI_Damageable.ReceiveDamage. Penetration: if cast to Fodder succeeds and PenetrationCount&lt;3, re-trace from hit location. Completed exec: SET ammo−1 → Call OnFired.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_Weapon_AssaultRifle in Weapons/AssaultRifle/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/AssaultRifle/</strong>. Override Fire(): Branch NOT bIsFiring → bIsFiring=true → CharMov.MaxWalkSpeed=200 → Set Timer "DoFireTick" CurrentFireInterval (looping=false). Custom Event DoFireTick: Branch bIsFiring AND ammo>0 → Line Trace → FInterp(Current, Min, WindUpRate) → SET CurrentFireInterval → re-schedule. Else: StopFire (reset all, Clear Timer, MaxWalkSpeed=600).</p></div></div>
+
+
+<div class="sec" id="s03">
+  <span class="sec-id" style="color:var(--red)">§03</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_Projectile_Base + BP_Projectile_Enemy</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Combat/</span></span></div>
+<div class="intro">Both live in <strong>Combat/</strong>. BP_Projectile_Base is the abstract parent; BP_Projectile_Enemy is the child that adds parry window timing. Navigate to Combat/ before creating either.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-red">CREATE</span><div class="step-title">BP_Projectile_Base in Combat/ (abstract parent)</div></div>
+<div class="step-body"><p>Navigate to <strong>Combat/</strong>. Blueprint Class → parent=Actor → check Abstract → <code>BP_Projectile_Base</code>. Add Sphere Collision (r=15), ProjectileMovementComponent (speed=2000). Variables: Damage (float=20), bCanBeParried (bool=false), Instigator_Enemy (BP_EnemyBase ref). On Component Hit: BPI_Damageable.ReceiveDamage on Other → Destroy Actor. Implement BPI_Parryable: CanBeParried returns bCanBeParried; OnParried→Destroy; OnPerfectParried→Destroy+AddStunDamage(999).</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-red">CREATE</span><div class="step-title">BP_Projectile_Enemy in Combat/ (child with parry window)</div></div>
+<div class="step-body"><p>Still in <strong>Combat/</strong>. Blueprint Class → parent=BP_Projectile_Base → <code>BP_Projectile_Enemy</code>. BeginPlay: Set Timer "OpenParryWindow" 0.3s. OpenParryWindow event: SET bCanBeParried=true → Set Scalar Parameter "GlowIntensity"=1.0 on mesh material → Set Timer "CloseParryWindow" 0.6s. CloseParryWindow: SET bCanBeParried=false → GlowIntensity=0.</p></div></div>
+
+
+<div class="sec" id="s04">
+  <span class="sec-id" style="color:var(--teal)">§04</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_SkillBase + BP_Skill_BlastWave</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Skills/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Skills/Base/</span></span></div>
+<div class="intro">BP_SkillBase and DA_SkillData live in <strong>Skills/Base/</strong>. Concrete skill BPs (like BP_Skill_BlastWave) live directly in <strong>Skills/</strong>. Adding a new skill = create a child BP in Skills/ and add a DT_Skills row — no other system changes needed.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_SkillBase in Skills/Base/ — DA_SkillData in Skills/Base/</div></div>
+<div class="step-body"><p>Navigate to <strong>Skills/Base/</strong>. Blueprint Class → parent=Actor → check Abstract → <code>BP_SkillBase</code>. Variables: SkillDataRowName (Name), OwnerPawn (Pawn), Duration (float). Implement BPI_SkillEquippable: Execute (empty), GetSkillData (returns DA ref). Also create DA_SkillData as a Data Asset (right-click → Miscellaneous → Data Asset).</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_Skill_BlastWave in Skills/</div></div>
+<div class="step-body"><p>Navigate to <strong>Skills/</strong>. Blueprint Class → parent=BP_SkillBase → <code>BP_Skill_BlastWave</code>. Override Execute(Instigator Pawn): Get All Actors In Radius (InstigatorLocation, r=600) → For Each → BPI_Damageable.ReceiveDamage(BaseDamage=150) → Spawn NS_SatchelExplosion at InstigatorLocation → Destroy Actor (self).</p></div></div>
+
+
+<div class="sec" id="s05">
+  <span class="sec-id" style="color:var(--purple)">§05</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Enemy Child BPs — BP_EnemyBase + all 5 types</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Base/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Brute/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/FlyingEye/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Fodder/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Spawner/</span></span></div>
+<div class="intro">BP_EnemyBase lives in <strong>Enemies/Base/</strong>. Each enemy child BP lives in its own subfolder: BP_Enemy_Brute in <strong>Enemies/Brute/</strong>, BP_Enemy_FlyingEye in <strong>Enemies/FlyingEye/</strong>, BP_Enemy_Spawner in <strong>Enemies/Spawner/</strong>, BP_Enemy_FodderMelee and BP_Enemy_FodderRanged both in <strong>Enemies/Fodder/</strong>.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">BP_EnemyBase in Enemies/Base/ (abstract parent)</div></div>
+<div class="step-body"><p>Navigate to <strong>Enemies/Base/</strong>. Blueprint Class → parent=Character → check Abstract → <code>BP_EnemyBase</code>. Add components: AC_EnemyHealthComponent, AC_WeakPointComponent, AC_StunComponent, AIPerceptionComponent (Sight config). Class Settings → implement BPI_Damageable (routes to AC_EnemyHealthComponent.TakeDamage) and BPI_WeakPointTarget. BeginPlay: Get Data Table Row (DT_Enemies, RowName = variable set per child) → Break → push values to all 3 components.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">Each child BP in its own subfolder</div></div>
+<div class="step-body"><p><strong>Enemies/Brute/:</strong> Blueprint Class → parent=BP_EnemyBase → <code>BP_Enemy_Brute</code>. Set EnemiesTableRowName="Brute", WPSocketNames=["WP_Chest","WP_ShoulderL","WP_ShoulderR"], AI Controller Class=AIC_Brute.<br>
+<strong>Enemies/FlyingEye/:</strong> <code>BP_Enemy_FlyingEye</code>. Row="FlyingEye", WPSocketNames=["WP_Eye","WP_Wing"], AIC=AIC_FlyingEye.<br>
+<strong>Enemies/Spawner/:</strong> <code>BP_Enemy_Spawner</code>. Row="Spawner", add AC_SpawnDirectorComponent in components panel, AIC=AIC_Spawner.<br>
+<strong>Enemies/Fodder/:</strong> <code>BP_Enemy_FodderMelee</code> and <code>BP_Enemy_FodderRanged</code>. Rows match, WPSocketNames=[] (empty), AIC=AIC_Fodder for both.</p></div></div>
+
+
+<div class="sec" id="s06">
+  <span class="sec-id" style="color:var(--blue)">§06</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">EQS — Environment Query Systems</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/FlyingEye/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Spawner/</span></span></div>
+<div class="intro">EQS assets live in the enemy's own subfolder: EQS_FlyingEye_Strafe in <strong>Enemies/FlyingEye/</strong>, EQS_Spawner_Retreat in <strong>Enemies/Spawner/</strong>. Right-click in the correct folder → Artificial Intelligence → Environment Query.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">EQS_FlyingEye_Strafe in Enemies/FlyingEye/</div></div>
+<div class="step-body"><p>Navigate to <strong>Enemies/FlyingEye/</strong>. Right-click → Artificial Intelligence → Environment Query → <code>EQS_FlyingEye_Strafe</code>. Inside: Generator = Points Circle (Querier Context, Radius=400, NumPoints=16). Add Distance Test to Player (preferred range 300–500). This query finds lateral positions for the eye to strafe to.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">EQS_Spawner_Retreat in Enemies/Spawner/</div></div>
+<div class="step-body"><p>Navigate to <strong>Enemies/Spawner/</strong>. Environment Query → <code>EQS_Spawner_Retreat</code>. Generator = Grid (2000×2000, spacing=200). Add Distance Test to Player: filter out points closer than 600 units, score by maximum distance. This pushes the Spawner to the far edge of the arena.</p></div></div>
+
+
+<div class="sec" id="s07">
+  <span class="sec-id" style="color:var(--purple)">§07</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Shared BT Task Nodes</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Shared_AI/</span></span></div>
+<div class="intro">All shared BT nodes live in <strong>Enemies/Shared_AI/</strong>. Navigate there before creating any of them. Right-click → Artificial Intelligence → Behavior Tree Task (for BTT_), Behavior Tree Service (for BTS_), or Behavior Tree Decorator (for BTD_).</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">All shared nodes in Enemies/Shared_AI/</div></div>
+<div class="step-body"><p>Navigate to <strong>Enemies/Shared_AI/</strong>. Create all of these here:<br>
+<strong>BTT_FindPlayerLocation:</strong> Receive Execute AI → Get Player Character → Get Actor Location → Set BB Value as Vector "TargetLocation" → Finish Execute Success=true.<br>
+<strong>BTT_AttackMelee (CRITICAL — damage on notify):</strong> Play Anim Montage → GET Anim Instance → Bind to On Montage Notify Begin → OnAttackNotify(Name): Branch Name=="AttackHit" → BPI_Damageable on BB.TargetActor → Unbind → Finish Execute.<br>
+<strong>BTT_FireProjectile:</strong> Normalise(TargetLoc−PawnLoc) → Spawn BP_Projectile_Enemy (offset 80u) → SET Instigator_Enemy → Finish Execute.<br>
+<strong>BTT_SpawnFodder:</strong> Cast pawn → GET AC_SpawnDirectorComponent → TrySpawnFodder() → Finish Execute.</p></div></div>
+
+
+<div class="sec" id="s08">
+  <span class="sec-id" style="color:var(--teal)">§08</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_ArenaManager + BP_EnemySpawner</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Arena/</span></span></div>
+<div class="intro">Both live in <strong>Arena/</strong>. BP_ArenaManager orchestrates wave spawning. BP_EnemySpawner is a simple placed marker actor — the ArenaManager picks randomly from the ones placed in the level.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_ArenaManager in Arena/</div></div>
+<div class="step-body"><p>Navigate to <strong>Arena/</strong>. Blueprint Class → parent=Actor → <code>BP_ArenaManager</code>. Variables: ActiveEnemies (BP_EnemyBase array), bArenaActive (bool). <strong>StartWave():</strong> bArenaActive=true → GET GS → Cast BP_GS_Anomaly → SET bArenaActive → GET all DT_ArenaWaves rows → For Each → Set Timer(row.SpawnDelay) → SpawnBatch(row). <strong>SpawnBatch(FS_WaveRow):</strong> For Loop SpawnCount → Get All Actors Of Class BP_EnemySpawner → random one → Spawn Actor(row.EnemyClass) → bind HealthComp.OnDeath → OnEnemyDied → ADD to ActiveEnemies. OnEnemyDied: REMOVE → Branch Num==0 → Call OnWaveComplete.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_EnemySpawner in Arena/ — then place instances in level</div></div>
+<div class="step-body"><p>Still in <strong>Arena/</strong>. Blueprint Class → parent=Actor → <code>BP_EnemySpawner</code>. Add a visible mesh or billboard component so it's visible in the editor. No Blueprint graph needed — this is a pure position marker. Place a minimum of 3 instances in the arena level at varied positions.</p></div></div>
+
+
+<div class="sec" id="s09">
+  <span class="sec-id" style="color:var(--blue)">§09</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_GI_Anomaly + BP_GS_Anomaly + save system</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Core/GameInstances/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Core/GameModes/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Core/SaveGame/</span></span></div>
+<div class="intro">BP_GI_Anomaly lives in <strong>Core/GameInstances/</strong>. BP_GS_Anomaly lives in <strong>Core/GameModes/</strong>. BP_Save_Anomaly lives in <strong>Core/SaveGame/</strong>. The Game Instance persists across level loads — it's the only place safe to store data that must survive an Open Level call.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">BP_Save_Anomaly in Core/SaveGame/</div></div>
+<div class="step-body"><p>Navigate to <strong>Core/SaveGame/</strong>. Blueprint Class → parent=SaveGame → <code>BP_Save_Anomaly</code>. Add variable: EquippedSkillRowName (Name). This is the only data that needs to persist — the equipped skill name is enough to reconstruct state on load.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">WIRE</span><div class="step-title">BP_GI_Anomaly in Core/GameInstances/ — Event Init + SaveGame function</div></div>
+<div class="step-body"><p>Variables: SavedEquippedSkillName (Name), bHasSaveData (bool). <strong>Event Init:</strong> Does Save Game Exist("SaveSlot_01") → Branch true → Load Game from Slot → Cast BP_Save_Anomaly → SET SavedEquippedSkillName + bHasSaveData=true. <strong>Function SaveGame:</strong> Create Save Game Object (BP_Save_Anomaly) → SET .EquippedSkillRowName=SavedEquippedSkillName → Save Game to Slot "SaveSlot_01". Set as Game Instance Class in Project Settings.</p></div></div>
+
+
+<div class="sec" id="s10">
+  <span class="sec-id" style="color:var(--orange)">§10</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Camera + VFX + remaining HUD</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Camera/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/UI/</span></span></div>
+<div class="intro">BP_CameraShake_Hit and BP_PlayerCamera live in <strong>Player/Camera/</strong>. All widget blueprints (WBP_) live in <strong>UI/</strong>. Camera shake is configured in Class Defaults, not in a Blueprint graph — no nodes needed.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_CameraShake_Hit in Player/Camera/</div></div>
+<div class="step-body"><p>Navigate to <strong>Player/Camera/</strong>. Blueprint Class → parent=LegacyCameraShake → <code>BP_CameraShake_Hit</code>. In Class Defaults (no graph): OscillationDuration=0.25, Rot Pitch Amplitude=2.0, Rot Roll Amplitude=1.5, Loc X Amplitude=3.0. No nodes needed. Triggered via Client Start Camera Shake in BP_PlayerCharacter.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">WBP_PauseMenu + WBP_DeathScreen + WBP_WeaponWheel in UI/</div></div>
+<div class="step-body"><p>Navigate to <strong>UI/</strong>. Create each as User Interface → Widget Blueprint. WBP_PauseMenu: Resume + Quit buttons, ZOrder=10 when added to Viewport. WBP_DeathScreen: fade-in UMG animation on Event Construct, Respawn + Main Menu buttons, ZOrder=20. WBP_WeaponWheel: 3 buttons (Pistol/Shotgun/AR), ZOrder=1. See Part 3 §10 for full open/close wiring.</p></div></div>
+
+
+<div class="sec" id="s11">
+  <span class="sec-id" style="color:var(--blue)">§11</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Remaining HUD Widgets — health, rage, ammo, skill</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/UI/</span></span></div>
+<div class="intro">All HUD sub-widgets live in <strong>UI/</strong>. They are created inside WBP_HUD's canvas — not as standalone screens. Bindings should reference the player character's components, not hardcoded values.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">All sub-widgets in UI/ — add to WBP_HUD canvas</div></div>
+<div class="step-body"><p>Navigate to <strong>UI/</strong>. Create each Widget Blueprint. WBP_HealthBar: Progress Bar, Bind Percent = CurrentHealth ÷ MaxHealth, Bind Fill Color (green→red lerp below 0.2). WBP_RageMeter: Progress Bar, Bind Percent = BPI_Rageable.GetRagePercent. WBP_AmmoDisplay: Text Block, Bind Text = WeaponSlots[ActiveWeaponIndex].CurrentAmmo → To Text (Int). WBP_SkillSlotDisplay: Image + Border (glow overlay), binds to OnSkillEquipped and OnEnragedStateBegin/End dispatchers. Open WBP_HUD and add each sub-widget to its container.</p></div></div>
+
+
+<div class="sec" id="s12">
+  <span class="sec-id" style="color:var(--teal)">§12</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">DA_WeaponData</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/Base/</span></span></div>
+<div class="intro">DA_WeaponData lives in <strong>Weapons/Base/</strong> alongside BP_WeaponBase. Create it as a Data Asset (right-click → Miscellaneous → Data Asset → pick the DA_WeaponData class). One DA per weapon is normal — or you can use DT_Weapons for all stats and leave DA_WeaponData for assets only (sound refs, mesh refs).</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">DA_WeaponData in Weapons/Base/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/Base/</strong>. Right-click → Miscellaneous → Data Asset → pick DA_WeaponData as the class → name it <code>DA_WeaponData</code> (or one per weapon if using per-weapon assets). Assign it in each weapon BP's Class Defaults under the WeaponData variable. This is where damage, ammo counts, sound cues, and mesh references are set per weapon.</p></div></div>
+
+</div>
+<footer>
+  <div>Project Anomaly — Blueprint Guide Part 2</div>
+  <div><span>GDD v1.1 · TDD v1.1 · UE 5.4</span> · Folder paths sourced from TDD §Folder Structure</div>
+</footer>
+</body></html>

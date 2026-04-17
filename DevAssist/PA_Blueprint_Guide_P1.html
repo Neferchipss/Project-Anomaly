@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Project Anomaly — Blueprint Guide Part 1</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap');
+:root {
+  --bg:#07090d; --bg1:#0c0f15; --bg2:#10141c; --bg3:#151b25;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --red:#ff4757; --orange:#ff9f43; --teal:#1dd1a1; --blue:#54a0ff;
+  --purple:#a29bfe; --yellow:#ffd32a; --green:#2ed573; --pink:#fd79a8;
+  --text:#c8d0dc; --muted:#526070; --muted2:#8494a8;
+  --mono:'JetBrains Mono',monospace; --display:'Syne',sans-serif;
+  --path-bg: rgba(29,209,161,0.08);
+  --path-border: rgba(29,209,161,0.25);
+  --path-text: #6edacf;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.65;}
+.page{max-width:980px;margin:0 auto;padding:0 40px 100px;}
+
+/* ── PATH BADGE ── */
+.path-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 8px 0 18px;
+}
+.path-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--path-bg);
+  border: 1px solid var(--path-border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-family: var(--mono);
+  color: var(--path-text);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.path-icon { font-size: 11px; }
+.path-text { }
+.path-row-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+  font-family: var(--mono);
+}
+
+/* ── SECTION HEADER ── */
+.sec{display:flex;align-items:center;gap:14px;margin:52px 0 8px;page-break-before:always;}
+.sec:first-of-type{page-break-before:avoid;}
+.sec-id{font-size:10px;color:var(--teal);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
+.sec-bar{flex:1;height:1px;background:var(--border2);}
+.sec-name{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+
+/* ── COVER ── */
+header{padding:50px 40px 36px;border-bottom:1px solid var(--border2);position:relative;overflow:hidden;background:linear-gradient(135deg,#07090d 55%,#0d1420);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(29,209,161,0.06),transparent 70%);pointer-events:none;}
+.hd-kicker{font-size:10px;letter-spacing:4px;color:var(--teal);text-transform:uppercase;margin-bottom:10px;}
+.hd-title{font-family:var(--display);font-size:36px;font-weight:800;line-height:1.05;margin-bottom:8px;letter-spacing:-1px;}
+.hd-title em{color:var(--teal);font-style:normal;}
+.hd-sub{font-size:12px;color:var(--muted2);max-width:640px;line-height:1.8;margin-bottom:20px;}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid;font-weight:500;}
+.tt{color:var(--teal);border-color:rgba(29,209,161,.25);background:rgba(29,209,161,.06);}
+.tb{color:var(--blue);border-color:rgba(84,160,255,.25);background:rgba(84,160,255,.06);}
+.to{color:var(--orange);border-color:rgba(255,159,67,.25);background:rgba(255,159,67,.06);}
+.tr{color:var(--red);border-color:rgba(255,71,87,.3);background:rgba(255,71,87,.08);}
+
+/* ── CONTENT BLOCKS ── */
+.intro{background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--teal);padding:16px 20px;border-radius:2px;margin-bottom:20px;font-size:12.5px;color:var(--muted2);line-height:1.8;}
+.intro strong{color:var(--text);}
+.step{margin-bottom:32px;page-break-inside:avoid;}
+.step-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.step-badge{font-family:var(--display);font-size:10px;font-weight:800;padding:3px 9px;border-radius:2px;letter-spacing:1px;flex-shrink:0;margin-top:2px;text-transform:uppercase;}
+.sb-red{background:var(--red);color:#fff;}
+.sb-blue{background:var(--blue);color:#07090d;}
+.sb-teal{background:var(--teal);color:#07090d;}
+.sb-orange{background:var(--orange);color:#07090d;}
+.sb-purple{background:var(--purple);color:#07090d;}
+.step-title{font-family:var(--display);font-size:15px;font-weight:700;line-height:1.3;}
+.step-body{font-size:12.5px;color:var(--muted2);line-height:1.75;margin-bottom:8px;}
+.step-body strong{color:var(--text);}
+.step-body p{margin-bottom:8px;}
+
+.callout{display:flex;gap:12px;padding:12px 16px;border-radius:2px;margin:12px 0;font-size:12px;line-height:1.7;}
+.callout.tip{background:rgba(29,209,161,.07);border:1px solid rgba(29,209,161,.2);}
+.callout.warn{background:rgba(255,159,67,.07);border:1px solid rgba(255,159,67,.2);}
+.callout.note{background:rgba(84,160,255,.07);border:1px solid rgba(84,160,255,.2);}
+.callout-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.callout-body{color:var(--muted2);}
+.callout-body strong{color:var(--text);}
+
+/* flow summary */
+.flow-summary{background:linear-gradient(135deg,rgba(29,209,161,0.06),rgba(84,160,255,0.04));border:1px solid rgba(29,209,161,.18);border-radius:3px;padding:16px 20px;margin-top:20px;}
+.flow-summary-title{font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.flow-summary-title::after{content:'';flex:1;height:1px;background:rgba(29,209,161,.2);}
+.flow-steps{list-style:none;counter-reset:fs;}
+.flow-steps li{counter-increment:fs;display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:var(--muted2);line-height:1.6;}
+.flow-steps li:last-child{border-bottom:none;}
+.flow-steps li::before{content:counter(fs);font-family:var(--display);font-size:10px;font-weight:800;background:var(--teal);color:#07090d;width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.flow-steps li strong{color:var(--text);}
+
+/* debug */
+.debug-block{background:linear-gradient(135deg,rgba(46,213,115,0.06),rgba(29,209,161,0.04));border:1px solid rgba(46,213,115,.2);border-radius:3px;padding:16px 20px;margin-top:12px;page-break-inside:avoid;}
+.debug-title{font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.debug-title::after{content:'';flex:1;height:1px;background:rgba(46,213,115,.2);}
+.debug-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.debug-col h5{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.debug-steps{list-style:none;}
+.debug-steps li{font-size:11.5px;color:var(--muted2);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;line-height:1.5;}
+.debug-steps li:last-child{border-bottom:none;}
+.debug-steps li::before{content:'▸';color:var(--green);flex-shrink:0;font-size:10px;margin-top:2px;}
+.debug-steps li strong{color:var(--text);}
+.debug-steps li code{font-family:var(--mono);font-size:10.5px;background:rgba(46,213,115,.1);color:var(--green);padding:1px 4px;border-radius:2px;}
+
+code{font-family:var(--mono);font-size:11px;background:rgba(84,160,255,.12);color:var(--blue);padding:1px 5px;border-radius:2px;}
+.var-table{width:100%;border-collapse:collapse;margin:10px 0;}
+.var-table th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border2);background:var(--bg1);}
+.var-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top;}
+.var-table tr:last-child td{border-bottom:none;}
+.pb{page-break-before:always;}
+.no-break{page-break-inside:avoid;}
+footer{margin-top:80px;padding:20px 40px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+footer span{color:var(--teal);}
+</style>
+</head><body>
+
+<header>
+  <div class="hd-kicker">// Blueprint Implementation Guide — Part 1</div>
+  <div class="hd-title">PROJECT <em>ANOMALY</em></div>
+  <div class="hd-sub">20 sections: project setup, structs, interfaces, input, all player components, weapons, enemy components, AI controllers, save system, HUD, full rage loop. Each section now includes the exact Content Browser folder path where the asset must be created — shown in the teal badge directly below the section header.</div>
+  <div class="tag-row">
+    <span class="tag tt">Part 1</span>
+    <span class="tag tb">UE 5.4</span>
+    <span class="tag tt">Folder Paths Added</span>
+    <span class="tag to">20 Sections</span>
+  </div>
+</header>
+<div class="page">
+
+<div class="sec" id="s01">
+  <span class="sec-id" style="color:var(--teal)">§01</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Project Setup & Folder Structure</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Core/GameInstances/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Core/GameModes/</span></span></div>
+<div class="intro">Create the Content Browser folder tree <strong>before creating any Blueprint</strong>. Right-click in the Content Browser → New Folder. Build the full tree from the TDD §Folder Structure. Setting the Default GameMode and Game Instance in Project Settings also happens here — they must exist before any other system references them.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">SETUP</span><div class="step-title">Create folder tree in Content Browser</div></div>
+<div class="step-body"><p>Right-click in Content Browser root → <strong>New Folder</strong> → name it <code>ProjectAnomaly</code>. Inside it, create these top-level folders: <code>Core/</code>, <code>Player/</code>, <code>Weapons/</code>, <code>Skills/</code>, <code>Enemies/</code>, <code>Combat/</code>, <code>Arena/</code>, <code>Input/</code>, <code>UI/</code>, <code>Data/</code>, <code>Interfaces/</code>, <code>Audio/</code>, <code>Materials/</code>, <code>VFX/</code>, <code>Levels/</code>. Then build the sub-folders per the TDD.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">BP_GM_Anomaly + BP_GS_Anomaly</div></div>
+<div class="step-body"><p>Navigate to <strong>Core/GameModes/</strong>. Right-click → Blueprint Class → parent=GameModeBase → name <code>BP_GM_Anomaly</code>. Repeat with parent=GameState → <code>BP_GS_Anomaly</code>. In Project Settings → Maps & Modes → assign both. Inside BP_GM_Anomaly Class Defaults, set Player Controller Class to BP_PlayerController (once it exists).</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">BP_GI_Anomaly</div></div>
+<div class="step-body"><p>Navigate to <strong>Core/GameInstances/</strong>. Right-click → Blueprint Class → parent=GameInstance → <code>BP_GI_Anomaly</code>. Assign it in Project Settings → Maps & Modes → Game Instance Class. This persists across level loads and holds the save game reference.</p></div></div>
+
+
+<div class="sec" id="s02">
+  <span class="sec-id" style="color:var(--blue)">§02</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Structs — FS_DamageInfo and all FS_ types</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Data/Structs/</span></span></div>
+<div class="intro">All structs live in <strong>Data/Structs/</strong>. Create them before any Blueprint that uses them — if the struct doesn't exist the Blueprint won't compile. Right-click in the Structs/ folder → Blueprint → Structure.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">FS_DamageInfo — 6 fields, used by every damage call</div></div>
+<div class="step-body"><p>Navigate to <strong>Data/Structs/</strong>. Right-click → Blueprint → Structure → name <code>FS_DamageInfo</code>. Add exactly 6 members: <code>BaseDamage</code> (float), <code>bIsWeakPointHit</code> (bool), <code>bIsArmourDamage</code> (bool), <code>bIsNextShotBoosted</code> (bool), <code>Instigator</code> (Object Reference → Actor), <code>HitLocation</code> (Vector). Field names are case-sensitive — every system that breaks this struct expects these exact names.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">FS_WeaponRow, FS_EnemyRow, FS_SkillRow, FS_WaveRow</div></div>
+<div class="step-body"><p>All in <strong>Data/Structs/</strong>. These are used as DataTable row types. <strong>FS_WeaponRow:</strong> MaxAmmo (int), BaseDamage (float), ReloadTime (float), WeaponClass (soft class ref). <strong>FS_EnemyRow:</strong> MaxHealth, MaxArmour (float), WeakPointCount (int), RagePerWeakPointHit (float), bCanBeStunned (bool), StunThreshold (float), bFiresProjectiles (bool), SightRadius (float). See TDD §Structs for FS_SkillRow and FS_WaveRow field lists.</p></div></div>
+
+
+<div class="sec" id="s03">
+  <span class="sec-id" style="color:var(--purple)">§03</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Blueprint Interfaces — all 6 BPI_ assets</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Interfaces/</span></span></div>
+<div class="intro">All interfaces live in <strong>Interfaces/</strong>. Create them before any Blueprint implements them. Right-click → Blueprint → Blueprint Interface. Interfaces are what let systems talk to each other without hard references — the entire architecture depends on them existing first.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">All 6 interfaces — function signatures</div></div>
+<div class="step-body"><p>Navigate to <strong>Interfaces/</strong>. Create all 6:<br>
+<strong>BPI_Damageable:</strong> ReceiveDamage(DamageInfo FS_DamageInfo), IsAlive → bool, GetCurrentHealth → float.<br>
+<strong>BPI_Rageable:</strong> IsEnraged → bool, GetRagePercent → float, NotifyWeakPointHit(Amount float).<br>
+<strong>BPI_WeakPointTarget:</strong> RegisterWeakPointHit(Index int, Damage float).<br>
+<strong>BPI_Parryable:</strong> CanBeParried → bool, OnParried(Instigator Pawn), OnPerfectParried(Instigator Pawn).<br>
+<strong>BPI_Interactable:</strong> Interact(Instigator Pawn), CanInteract(Instigator Pawn) → bool.<br>
+<strong>BPI_SkillEquippable:</strong> Execute(Instigator Pawn), GetSkillData → DA_SkillData.</p></div></div>
+
+
+<div class="sec" id="s04">
+  <span class="sec-id" style="color:var(--orange)">§04</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Enhanced Input — IMC_Default and all IA_ assets</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Input/</span></span></div>
+<div class="intro">All input assets live in <strong>Input/</strong>. Create Input Actions first, then the Mapping Context that binds them to keys. Without calling <code>Add Mapping Context</code> in BP_PlayerController BeginPlay, none of the IA_ events will ever fire.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">10 Input Action assets</div></div>
+<div class="step-body"><p>Navigate to <strong>Input/</strong>. Right-click → Input → Input Action. Create all 10 with correct Value Types: <code>IA_Fire</code>, <code>IA_Parry</code>, <code>IA_Grapple</code>, <code>IA_Dash</code>, <code>IA_Utility</code>, <code>IA_Skill</code>, <code>IA_WeaponWheel</code>, <code>IA_Jump</code> = <strong>Digital (bool)</strong>. <code>IA_Move</code>, <code>IA_Look</code> = <strong>Axis2D (Vector2D)</strong>. Value Type is set in each IA_ asset's Details panel.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">IMC_Default — mapping context</div></div>
+<div class="step-body"><p>Still in <strong>Input/</strong>. Right-click → Input → Input Mapping Context → name <code>IMC_Default</code>. Open it → click + to add mappings → bind each IA_ to its key. Then in <strong>BP_PlayerController</strong> BeginPlay: Get Enhanced Input Local Player Subsystem → Add Mapping Context (IMC_Default, Priority=0). This must run before any IA_ event will fire.</p></div></div>
+
+
+<div class="sec" id="s05">
+  <span class="sec-id" style="color:var(--teal)">§05</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_HealthComponent</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">Lives in <strong>Player/Components/</strong>. Create it as an ActorComponent (not an Actor). Right-click in the Components/ folder → Blueprint Class → parent=ActorComponent. It will be added to BP_PlayerCharacter via the Components panel.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">Variables, dispatchers, TakeDamage function</div></div>
+<div class="step-body"><p>Variables: <code>MaxHealth</code> (float=100, Instance Editable), <code>CurrentHealth</code> (float), <code>bIsInvincible</code> (bool). Event Dispatchers: <code>OnDamageTaken</code> (payload: DamageAmount float), <code>OnDeath</code> (no payload). <strong>BeginPlay:</strong> SET CurrentHealth=MaxHealth. <strong>Function TakeDamage(DamageInfo FS_DamageInfo):</strong> Branch bIsInvincible → exit. Break DamageInfo → subtract BaseDamage → Clamp(0, MaxHealth) → SET CurrentHealth → Call OnDamageTaken → Branch CurrentHealth≤0 → Call OnDeath. See the flowchart below.</p></div></div>
+<div class="flow-summary"><div class="flow-summary-title">Flow Summary</div><ul class="flow-steps">
+<li><strong>bIsInvincible gates all damage.</strong> Set it true during a dash or parry stagger to grant brief immunity.</li>
+<li><strong>Clamp prevents negative health.</strong> Always clamp before checking the death branch — never let health go below 0.</li>
+<li><strong>Both dispatchers are used.</strong> OnDamageTaken drives the HUD health bar and PP_HitFlash. OnDeath drives the death animation and death screen.</li>
+</ul></div>
+<div class="debug-block"><div class="debug-title">🔧 Debug</div><div class="debug-grid"><div class="debug-col"><h5>Tests</h5><ul class="debug-steps"><li>Add <code>Print String</code> in TakeDamage printing CurrentHealth — shoot player, confirm it decrements.</li><li>Add <code>Print String "DEAD"</code> in OnDeath — shoot until 0, confirm it fires exactly once.</li></ul></div><div class="debug-col"><h5>Expected</h5><ul class="debug-steps"><li>CurrentHealth decrements by BaseDamage each shot.</li><li>OnDeath fires when CurrentHealth reaches 0, not before.</li><li>No damage applied when bIsInvincible=true.</li></ul></div></div></div>
+
+
+<div class="sec" id="s06">
+  <span class="sec-id" style="color:var(--red)">§06</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_RageComponent</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">Lives in <strong>Player/Components/</strong>. This is the most critical system in the game — it blocks every ability unlock, every HUD binding, and the VFX pipeline. Build and test it before anything else that references rage state.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-red">CRITICAL</span><div class="step-title">Variables, AddRage, ConsumeRage, EndEnragedState</div></div>
+<div class="step-body"><p>Variables: <code>RageMax</code>=100, <code>RageCurrent</code>=0, <code>EnragedDuration</code>=1.5, <code>bIsEnraged</code>=false, <code>EnragedTimerHandle</code>. Dispatchers: <code>OnEnragedStateBegin</code>, <code>OnEnragedStateEnd</code> (both no payload). <strong>Function AddRage(Amount float):</strong> Branch NOT bIsEnraged → SET RageCurrent=Clamp(RageCurrent+Amount, 0, RageMax) → Branch RageCurrent≥RageMax → ConsumeRage. <strong>ConsumeRage:</strong> SET bIsEnraged=true, RageCurrent=0 → Call OnEnragedStateBegin → Set Timer by Function Name "EndEnragedState" Time=EnragedDuration. <strong>Custom Event EndEnragedState:</strong> SET bIsEnraged=false → Call OnEnragedStateEnd.</p></div></div>
+<div class="flow-summary"><div class="flow-summary-title">Flow Summary</div><ul class="flow-steps">
+<li><strong>bIsEnraged gates AddRage.</strong> While enraged, no WP hits add rage — the meter stays at 0 until the state ends.</li>
+<li><strong>ConsumeRage resets to 0 before broadcasting.</strong> This means the HUD shows empty meter the moment enrage starts, not full.</li>
+<li><strong>The timer calls EndEnragedState as a Custom Event, not a function.</strong> This is intentional — it allows the timer to be cleared if needed in the future.</li>
+</ul></div>
+<div class="debug-block"><div class="debug-title">🔧 Debug</div><div class="debug-grid"><div class="debug-col"><h5>Tests</h5><ul class="debug-steps"><li>Print RageCurrent in AddRage — shoot WPs, confirm value increases.</li><li>Print "ENRAGE BEGIN" in OnEnragedStateBegin binding.</li><li>Print GetGameTimeSinceCreation in EndEnragedState — verify ~1.5s gap.</li></ul></div><div class="debug-col"><h5>Expected</h5><ul class="debug-steps"><li>WP hits add rage; body shots do not.</li><li>OnEnragedStateBegin fires exactly once per fill.</li><li>EndEnragedState fires exactly 1.5s after begin.</li><li>Loop is clean: rage rebuilds from 0 after state ends.</li></ul></div></div></div>
+
+
+<div class="sec" id="s07">
+  <span class="sec-id" style="color:var(--orange)">§07</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_WeaponComponent + Weapon BPs</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/AssaultRifle/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/Base/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/Pistol/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Weapons/Shotgun/</span></span></div>
+<div class="intro">AC_WeaponComponent lives in <strong>Player/Components/</strong>. The weapon BPs each live in their own subfolder under <strong>Weapons/</strong>. Build BP_WeaponBase first (abstract parent), then each child weapon BP. The component manages the 3-slot inventory and delegates fire calls downward.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_WeaponBase — abstract parent in Weapons/Base/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/Base/</strong>. Right-click → Blueprint Class → parent=Actor → name <code>BP_WeaponBase</code>. Open Class Settings → check <strong>Abstract</strong>. Variables: CurrentAmmo (int), MaxAmmo (int), bIsReloading (bool), DamageMultiplier (float=1.0), WeaponData (DA_WeaponData ref). Dispatchers: OnFired, OnReloadComplete, OnAmmoEmpty. Add Custom Event <code>Fire</code> — leave it empty. Children override it.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_Weapon_Pistol in Weapons/Pistol/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/Pistol/</strong>. Right-click → Blueprint Class → parent=BP_WeaponBase → <code>BP_Weapon_Pistol</code>. Override Fire() event: Branch CurrentAmmo>0 → Line Trace By Channel (Camera Location, Camera Fwd × 5000) → Branch bBlockingHit → BPI_Damageable.ReceiveDamage on HitActor → SET CurrentAmmo−1 → Call OnFired.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_Weapon_Shotgun in Weapons/Shotgun/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/Shotgun/</strong>. Override Fire(): For Loop 0–7 (8 pellets) → Random Unit Vector In Cone (Camera Fwd, 5°) → Line Trace → BPI_Damageable on hit. Penetration: if hit actor is Fodder and PenetrationCount&lt;3, re-trace from hit location.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_Weapon_AssaultRifle in Weapons/AssaultRifle/</div></div>
+<div class="step-body"><p>Navigate to <strong>Weapons/AssaultRifle/</strong>. Override Fire(): wind-up self-scheduling timer DoFireTick. FInterp CurrentFireInterval toward MinFireInterval each tick. StopFire resets interval and restores MaxWalkSpeed. Movement penalty: 200 while firing, 600 normal.</p></div></div>
+
+
+<div class="sec" id="s08">
+  <span class="sec-id" style="color:var(--blue)">§08</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_ParryComponent + BP_ParryWindow</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Combat/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">AC_ParryComponent lives in <strong>Player/Components/</strong>. BP_ParryWindow (the collision volume it spawns) lives in <strong>Combat/</strong>. The component manages timing; the window actor handles overlap detection.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">AC_ParryComponent in Player/Components/</div></div>
+<div class="step-body"><p>Variables: BaseParryWindow=0.35, CurrentParryWindow=0.35, bParryActive (bool). <strong>ActivateParry():</strong> Branch NOT bParryActive → SET true → Spawn BP_ParryWindow at owner location → Set Timer "DeactivateParry" CurrentParryWindow. <strong>SetWindowLeniency(Multiplier):</strong> SET CurrentParryWindow = BaseParryWindow × Multiplier. Called with 2.0 during Enraged State to widen the window.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">BP_ParryWindow in Combat/</div></div>
+<div class="step-body"><p>Navigate to <strong>Combat/</strong>. Right-click → Blueprint Class → parent=Actor → <code>BP_ParryWindow</code>. Add Sphere Collision (radius=80). Variable SpawnTime (float). BeginPlay: SET SpawnTime=GetGameTimeSinceCreation. On Component Begin Overlap: BPI_Parryable.CanBeParried on Other → Branch true → timing check (current time − SpawnTime ≤ 0.08 = Perfect → OnPerfectParried / else Normal → OnParried).</p></div></div>
+
+
+<div class="sec" id="s09">
+  <span class="sec-id" style="color:var(--teal)">§09</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_MovementExtComponent</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Arena/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">AC_MovementExtComponent lives in <strong>Player/Components/</strong>. BP_GrappleAnchor is a placed level actor that lives in <strong>Arena/</strong> — create it there, then place instances in the level.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">AC_MovementExtComponent in Player/Components/</div></div>
+<div class="step-body"><p><strong>TryGrapple():</strong> Line Trace from Camera forward → Cast hit actor to BP_GrappleAnchor → fail=exit silently → SET CurrentAnchor → Launch Character (Normalise(AnchorLoc−PlayerLoc) × GrappleSpeed, bXY+bZ override=true). <strong>TryDash(Direction Vector):</strong> BPI_Rageable.IsEnraged on Owner → Branch true → Launch Character (Direction × DashForce) → Call OnDashUsed dispatcher.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_GrappleAnchor in Arena/</div></div>
+<div class="step-body"><p>Navigate to <strong>Arena/</strong>. Blueprint Class → parent=Actor → <code>BP_GrappleAnchor</code>. Add a Sphere Collision (radius=50) and a visible mesh (small sphere or ring). No Blueprint logic needed — this is a pure target marker. Place multiple instances in the level at height-varied positions reachable from the ground.</p></div></div>
+
+
+<div class="sec" id="s10">
+  <span class="sec-id" style="color:var(--orange)">§10</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_UtilityComponent + BP_SatchelCharge</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Combat/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">AC_UtilityComponent lives in <strong>Player/Components/</strong>. BP_SatchelCharge (the spawned physics actor) lives in <strong>Combat/</strong>. The component manages throw logic and cooldown; the charge actor manages its own fuse and detonation.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">AC_UtilityComponent in Player/Components/</div></div>
+<div class="step-body"><p>Variables: bCanThrow (bool=true), ThrowForce (float=2000), CooldownDuration (float=45). <strong>ThrowSatchel():</strong> Branch bCanThrow → Spawn BP_SatchelCharge at hand socket → Add Impulse (fwd × ThrowForce) → SET bCanThrow=false → Set Timer "StartCooldown" 45s. <strong>StartCooldown event:</strong> SET bCanThrow=true.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">BP_SatchelCharge in Combat/</div></div>
+<div class="step-body"><p>Navigate to <strong>Combat/</strong>. Blueprint Class → parent=Actor → <code>BP_SatchelCharge</code>. Add Static Mesh (sphere), Sphere Collision, RadialForceComponent (Radius=600, Strength=2000, bImpulseVelChange=true). <strong>BeginPlay:</strong> Set Timer "Detonate" 2.0s. <strong>Detonate:</strong> Fire Impulse on RadialForceComponent → Get Overlapping Actors → For Each → BPI_Damageable.ReceiveDamage → Spawn NS_SatchelExplosion → Destroy Actor.</p></div></div>
+
+
+<div class="sec" id="s11">
+  <span class="sec-id" style="color:var(--teal)">§11</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">BP_PlayerCharacter — full wiring</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Character/</span></span></div>
+<div class="intro">Both live in <strong>Player/Character/</strong>. BP_PlayerCharacter is the root player actor — it owns all 7 AC_ components. BP_PlayerController handles input registration and HUD ownership. Build the skeleton first (components added but stubs only), then complete the rage bindings once AC_RageComponent exists.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">SETUP</span><div class="step-title">BP_PlayerCharacter — add all 7 components</div></div>
+<div class="step-body"><p>Navigate to <strong>Player/Character/</strong>. Blueprint Class → parent=Character → <code>BP_PlayerCharacter</code>. In the Components panel click Add (+) for each: AC_HealthComponent, AC_RageComponent, AC_WeaponComponent, AC_MovementExtComponent, AC_ParryComponent, AC_UtilityComponent, AC_SkillSlotComponent. Class Settings → Implemented Interfaces: BPI_Damageable, BPI_Rageable.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">WIRE</span><div class="step-title">BP_PlayerController — input registration + HUD</div></div>
+<div class="step-body"><p>Navigate to <strong>Player/Character/</strong>. Blueprint Class → parent=PlayerController → <code>BP_PlayerController</code>. BeginPlay: Get Enhanced Input Local Player Subsystem → Add Mapping Context (IMC_Default, Priority=0) → Create Widget WBP_HUD → Add to Viewport (ZOrder=0). Assign as Player Controller Class in BP_GM_Anomaly.</p></div></div>
+
+
+<div class="sec" id="s12">
+  <span class="sec-id" style="color:var(--blue)">§12</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">DataTables — DT_Weapons, DT_Enemies, DT_Skills, DT_ArenaWaves</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Data/</span></span></div>
+<div class="intro">All DataTables live in <strong>Data/</strong>. Right-click in Data/ → Miscellaneous → Data Table → pick the matching struct. Row names are referenced by string throughout the codebase — spelling must be exact.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">DT_Weapons using FS_WeaponRow</div></div>
+<div class="step-body"><p>Navigate to <strong>Data/</strong>. Right-click → Miscellaneous → Data Table → select <code>FS_WeaponRow</code> → name <code>DT_Weapons</code>. Open and add rows: <code>Pistol</code>, <code>Shotgun</code>, <code>AssaultRifle</code>. Exact spelling, exact capitalisation.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">DT_Enemies using FS_EnemyRow</div></div>
+<div class="step-body"><p>Still in <strong>Data/</strong>. Right-click → Data Table → select <code>FS_EnemyRow</code> → name <code>DT_Enemies</code>. Add rows: <code>Brute</code>, <code>FlyingEye</code>, <code>Spawner</code>, <code>FodderMelee</code>, <code>FodderRanged</code>. These names are referenced in child enemy BPs as EnemiesTableRowName — any typo means a silent DataTable miss at runtime.</p></div></div>
+
+
+<div class="sec" id="s13">
+  <span class="sec-id" style="color:var(--red)">§13</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_EnemyHealthComponent</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Base/</span></span></div>
+<div class="intro">Lives in <strong>Enemies/Base/</strong> — not in Player/Components. Right-click in Enemies/Base/ → Blueprint Class → parent=ActorComponent. It handles two separate damage pools: armour and health, each with different routing logic.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-red">CREATE</span><div class="step-title">Armour pool + health pool + routing</div></div>
+<div class="step-body"><p>Variables: MaxHealth, MaxArmour, CurrentHealth, CurrentArmour (float), bArmourBroken (bool). Dispatchers: OnDamageTaken(DamageInfo), OnArmourBroken, OnDeath. <strong>TakeDamage(FS_DamageInfo):</strong> Break struct → Branch bIsArmourDamage → [Armour path: subtract CurrentArmour → Clamp → SET → Branch ≤0 → SET bArmourBroken=true → Call OnArmourBroken] / [Health path: Branch bArmourBroken gate → subtract → Clamp → SET → Branch ≤0 → Call OnDeath].</p></div></div>
+
+
+<div class="sec" id="s14">
+  <span class="sec-id" style="color:var(--purple)">§14</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_WeakPointComponent + BP_WeakPointActor</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Combat/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Base/</span></span></div>
+<div class="intro">AC_WeakPointComponent lives in <strong>Enemies/Base/</strong>. BP_WeakPointActor (the spawned collision sphere) lives in <strong>Combat/</strong>. The component spawns and manages the actors at BeginPlay; the actors handle their own overlap events.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">AC_WeakPointComponent in Enemies/Base/</div></div>
+<div class="step-body"><p>Variables: WPSocketNames (Name array, Instance Editable), SpawnedWPActors (BP_WeakPointActor array). BeginPlay: For Each WPSocketNames → Spawn BP_WeakPointActor at owner's root → Attach to Mesh Component at socket name → SET WeakPointIndex (loop index) → ADD to array.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">BP_WeakPointActor in Combat/</div></div>
+<div class="step-body"><p>Navigate to <strong>Combat/</strong>. Blueprint Class → parent=Actor → <code>BP_WeakPointActor</code>. Add Sphere Collision (radius=30). Variables: bIsExposed (bool=true), WeakPointIndex (int). BeginPlay: Bind On Component Hit. Handler: Branch bIsExposed → BPI_WeakPointTarget.RegisterWeakPointHit on GetOwner → BPI_Rageable.NotifyWeakPointHit on GetPlayerCharacter(0).</p></div></div>
+
+
+<div class="sec" id="s15">
+  <span class="sec-id" style="color:var(--orange)">§15</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_StunComponent</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Base/</span></span></div>
+<div class="intro">Lives in <strong>Enemies/Base/</strong> alongside the other shared enemy components. Create it as an ActorComponent. It is added to BP_EnemyBase via the Components panel and receives damage accumulation calls from BTT_AttackMelee.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-orange">CREATE</span><div class="step-title">Stun accumulator and recovery timer</div></div>
+<div class="step-body"><p>Variables: StunThreshold (float, pushed from DT row), StunAccumulator (float=0), StunDuration (float=2.5), bIsStunned (bool). Dispatchers: OnStunBegin, OnStunEnd. <strong>AddStunDamage(Amount):</strong> Branch NOT bIsStunned → SET Accumulator+=Amount → Branch ≥Threshold → SET bIsStunned=true → Call OnStunBegin → Set Timer "EndStun" StunDuration. <strong>EndStun:</strong> SET bIsStunned=false, Accumulator=0 → Call OnStunEnd.</p></div></div>
+
+
+<div class="sec" id="s16">
+  <span class="sec-id" style="color:var(--blue)">§16</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AI Controllers — AIC_ pattern</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Brute/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/FlyingEye/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Fodder/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Spawner/</span></span></div>
+<div class="intro">Each AI Controller lives in its enemy's own subfolder: AIC_Brute in <strong>Enemies/Brute/</strong>, AIC_FlyingEye in <strong>Enemies/FlyingEye/</strong>, AIC_Spawner in <strong>Enemies/Spawner/</strong>, AIC_Fodder in <strong>Enemies/Fodder/</strong>. Create them as Blueprint Class → parent=AIController.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">PATTERN</span><div class="step-title">AIC_ OnPossess — the standard wiring</div></div>
+<div class="step-body"><p>Every AIC_ follows the same OnPossess pattern: Run Behavior Tree (BT_[Enemy]) → Cast GetControlledPawn to BP_Enemy_[Type] → GET AC_EnemyHealthComponent → Bind dispatchers to Blackboard writes: OnArmourBroken → Set BB Bool "bArmourBroken"=true; OnStunBegin → "bIsStunned"=true; OnStunEnd → false; OnDeath → "bIsDead"=true. OnPerceptionUpdated: Cast detected actor to player → write to BB Object "TargetActor". Also bind component dispatchers to ABP_ variable pushes (see §03 in Part 3).</p></div></div>
+
+
+<div class="sec" id="s17">
+  <span class="sec-id" style="color:var(--purple)">§17</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Behaviour Trees + Blackboards</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Brute/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/FlyingEye/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Fodder/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Enemies/Spawner/</span></span></div>
+<div class="intro">Each enemy's BT_ and BB_ live in their own subfolder. BT_Brute + BB_Brute in <strong>Enemies/Brute/</strong>, BT_FlyingEye + BB_FlyingEye in <strong>Enemies/FlyingEye/</strong>, and so on. Create the BB_ first — BTs reference it. Shared task/service/decorator nodes live in <strong>Enemies/Shared_AI/</strong>.</div>
+<div class="callout note"><div class="callout-icon">ℹ️</div><div class="callout-body"><strong>Finish Execute is mandatory.</strong> Every BTT_ (Behavior Tree Task) must call Finish Execute on ALL code paths — including cast failures and early exits. If Finish Execute is never called, the BT freezes on that node permanently. This is the most common BT bug.</div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-purple">CREATE</span><div class="step-title">Shared AI nodes in Enemies/Shared_AI/</div></div>
+<div class="step-body"><p>Navigate to <strong>Enemies/Shared_AI/</strong>. Create all shared nodes here so all enemy BTs can reference the same assets. Tasks (BTT_): FindPlayerLocation, MoveToEQSResult, AttackMelee, FireProjectile, SpawnFodder. Services (BTS_): UpdatePlayerLocation (interval=0.2s), CheckLineOfSight. Decorators (BTD_): IsStunned, IsArmourBroken, PlayerInRange.</p></div></div>
+
+
+<div class="sec" id="s18">
+  <span class="sec-id" style="color:var(--teal)">§18</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">AC_SkillSlotComponent + BP_SkillBase</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Arena/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Skills/</span></span><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Skills/Base/</span></span></div>
+<div class="intro">AC_SkillSlotComponent lives in <strong>Player/Components/</strong>. BP_SkillBase and BP_Skill_BlastWave live in <strong>Skills/</strong>. DA_SkillData lives in <strong>Skills/Base/</strong>. BP_SavePoint (the level actor that opens the skill menu) lives in <strong>Arena/</strong>.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">AC_SkillSlotComponent in Player/Components/</div></div>
+<div class="step-body"><p>Variables: EquippedSkill (DA_SkillData ref), bSkillAvailable (bool). <strong>ActivateSkill():</strong> BPI_Rageable.IsEnraged on Owner → Branch true → Is Valid(EquippedSkill) → Spawn Actor from EquippedSkill.SkillClass → SET OwnerPawn → BPI_SkillEquippable.Execute(Instigator) → Call OnSkillActivated. <strong>EquipSkill(DA):</strong> SET EquippedSkill → GET Game Instance → Cast BP_GI_Anomaly → SET SavedEquippedSkillName → Call OnSkillEquipped.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_SkillBase (abstract) in Skills/Base/ — BP_Skill_BlastWave in Skills/</div></div>
+<div class="step-body"><p>Navigate to <strong>Skills/Base/</strong>. Blueprint Class → parent=Actor → check Abstract → <code>BP_SkillBase</code>. Variables: SkillDataRowName (Name), OwnerPawn (Pawn ref), Duration (float). Implement BPI_SkillEquippable: Execute (empty — children override), GetSkillData. Then navigate to <strong>Skills/</strong>. Blueprint Class → parent=BP_SkillBase → <code>BP_Skill_BlastWave</code>. Override Execute: Get All Actors In Radius (r=600) → For Each → BPI_Damageable.ReceiveDamage(150) → Spawn NS_SatchelExplosion → Destroy Actor self.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-teal">CREATE</span><div class="step-title">BP_SavePoint in Arena/</div></div>
+<div class="step-body"><p>Navigate to <strong>Arena/</strong>. Blueprint Class → parent=Actor → <code>BP_SavePoint</code>. Implement BPI_Interactable. CanInteract(Pawn): GET Game State → Cast BP_GS_Anomaly → return NOT bArenaActive. Interact(Pawn): Cast player → GET AC_SkillSlotComponent → Create WBP_SkillSelectMenu → Add to Viewport (ZOrder=1) → GET Game Instance → SaveGame.</p></div></div>
+
+
+<div class="sec" id="s19">
+  <span class="sec-id" style="color:var(--blue)">§19</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">HUD Widgets</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/UI/</span></span></div>
+<div class="intro">All UI widgets live in <strong>UI/</strong>. Right-click in UI/ → User Interface → Widget Blueprint. WBP_HUD is the root container that is created and added to Viewport by BP_PlayerController. All sub-widgets (WBP_HealthBar etc.) are placed inside WBP_HUD's canvas.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">WBP_HUD — root container, added to Viewport at ZOrder=0</div></div>
+<div class="step-body"><p>Navigate to <strong>UI/</strong>. User Interface → Widget Blueprint → <code>WBP_HUD</code>. Add a Canvas Panel as the root. Add sub-widget placeholders for health (top-left), rage (below health), ammo (top-right), skill slot (bottom-right). Add to Viewport in BP_PlayerController BeginPlay at ZOrder=0 — all sub-menus use higher ZOrder values.</p></div></div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-blue">CREATE</span><div class="step-title">WBP_HealthBar, WBP_RageMeter, WBP_AmmoDisplay — all in UI/</div></div>
+<div class="step-body"><p>Each is a Widget Blueprint in <strong>UI/</strong>. WBP_HealthBar: Progress Bar, Bind Percent to CurrentHealth÷MaxHealth, Bind Fill Color (green→red lerp below 0.2). WBP_RageMeter: Progress Bar, Bind Percent to BPI_Rageable.GetRagePercent. WBP_AmmoDisplay: Text Block, Bind Text to WeaponSlots[ActiveWeaponIndex].CurrentAmmo. WBP_WeaponWheel: ZOrder=1 (above HUD).</p></div></div>
+
+
+<div class="sec" id="s20">
+  <span class="sec-id" style="color:var(--red)">§20</span>
+  <div class="sec-bar"></div>
+  <span class="sec-name">Full Rage Loop — end-to-end</span>
+  <div class="sec-bar"></div>
+</div>
+<div class="path-row-label">Content Browser location</div><div class="path-row"><span class="path-badge"><span class="path-icon">📁</span><span class="path-text">Content/ProjectAnomaly/Player/Components/</span></span></div>
+<div class="intro">This section covers how all systems wire together in BP_PlayerCharacter's BeginPlay. No new assets are created here — it is the binding pass that connects the rage dispatchers to the 4 ability unlocks and 3 ability reverts.</div>
+<div class="step no-break"><div class="step-header"><span class="step-badge sb-red">WIRE</span><div class="step-title">BP_PlayerCharacter BeginPlay — 7 rage bindings via Sequence node</div></div>
+<div class="step-body"><p>In BP_PlayerCharacter BeginPlay, use a Sequence node. GET RageComponent. Bind OnEnragedStateBegin to 4 Custom Events: <strong>WeaponBoost</strong> (SET WeaponComponent.bNextShotBoosted=true), <strong>UnlockDash</strong> (SET MovementExtComponent.bDashAvailable=true), <strong>WidenParry</strong> (ParryComponent.SetWindowLeniency(2.0)), <strong>EnableSkill</strong> (SET SkillSlotComponent.bSkillAvailable=true). Bind OnEnragedStateEnd to 3: LockDash (=false), ResetParry (SetWindowLeniency(1.0)), DisableSkill (=false).</p></div></div>
+<div class="flow-summary"><div class="flow-summary-title">Flow Summary — Complete Rage Loop</div><ul class="flow-steps">
+<li><strong>WP hit → AddRage → meter fills → ConsumeRage</strong> sets bIsEnraged=true and calls OnEnragedStateBegin.</li>
+<li><strong>4 ability unlocks fire simultaneously</strong> from the single OnEnragedStateBegin dispatcher broadcast.</li>
+<li><strong>1.5s timer → EndEnragedState</strong> sets bIsEnraged=false and calls OnEnragedStateEnd.</li>
+<li><strong>3 ability reverts fire simultaneously</strong> from OnEnragedStateEnd.</li>
+<li><strong>Meter rebuilds from 0.</strong> The loop can repeat indefinitely.</li>
+</ul></div>
+
+</div>
+<footer>
+  <div>Project Anomaly — Blueprint Guide Part 1</div>
+  <div><span>GDD v1.1 · TDD v1.1 · UE 5.4</span> · Folder paths sourced from TDD §Folder Structure</div>
+</footer>
+</body></html>
